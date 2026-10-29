@@ -1,0 +1,9 @@
+# ===== BÍ MẬT: tuyệt đối không đưa lên kho công khai =====
+secrets.h
+*.local.js
+*.env
+*.local.h
+
+# ===== File rác của hệ điều hành / công cụ =====
+.DS_Store
+Thumbs.db

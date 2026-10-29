@@ -1,0 +1,1 @@
+{"v": 1, "ts": 1793236594, "temp_c": 27.5, "ph": 5.8, "turb_v": 3.4, "turb_pct": 55, "level_pct": 12, "risk": 2, "flags": ["ph_low", "turb_high", "level_low"], "rssi": -70, "uptime_s": 3620, "fw": "1.0.0"}
