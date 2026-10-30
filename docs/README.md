@@ -24,3 +24,6 @@ GitHub Pages phục vụ thư mục này: Settings → Pages → Deploy from a b
 
 ## Kiểm thử
 - Với ESP32 giả (`tools/fake-esp32`): gõ `demo2`, `demo3a`, `demo3b`, `set temp 32`, `set temp 35`, `set ph 8.7` và đối chiếu bảng ca thử mục E8 (T4.9, ghi là MÔ PHỎNG).
+
+## Lưu ý
+- Cảnh báo cùng mức chỉ hiện cách nhau tối thiểu 60/30/15 giây cho mức 1/2/3 (hằng số ALARM_GAP_MS trong app.js)

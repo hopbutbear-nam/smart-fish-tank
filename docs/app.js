@@ -20,6 +20,7 @@ const STALE_MS = 30000;                    // quá 30 giây không có telemetry
 const EVT_MAX = 100;                       // số sự kiện tối đa lưu trong trình duyệt
 const EVT_MAX_AGE = 7 * 24 * 3600 * 1000;  // giữ sự kiện 7 ngày
 const EVT_SHOW = 50;                       // số sự kiện hiển thị
+const ALARM_GAP_MS = { 1: 60000, 2: 30000, 3: 15000 };   // giãn cách tối thiểu giữa hai dòng cảnh báo CÙNG MỨC: mức 1 = 60 giây, mức 2 = 30 giây, mức 3 = 15 giây
 const FEED_WAIT_MS = 15000;                // chờ phản hồi cho ăn tối đa 15 giây
 const MAX_FEED_TIMES = 3;                  // D6 (đề xuất): tối đa 3 mốc, chừa 1 lần cho "Cho ăn ngay". Đổi thành 4 nếu nhóm chốt 4.
 
@@ -520,7 +521,7 @@ function onEvent(e) {
     const now = Date.now();
     const ts = (typeof e.ts === "number" && e.ts > 0) ? e.ts * 1000 : 0;
     const type = String(e.type || "?");
-    let txt, cls;
+    let txt, cls, skip = false;
 
     if (type === "boot") { txt = "🔄 Thiết bị khởi động (firmware " + (e.fw || "?") + ")"; cls = "ev-boot"; }
     else if (type === "feed_done") { txt = "🍤 Đã cho ăn " + (e.portions || 1) + " phần"; cls = "ev-feed"; }
@@ -529,13 +530,17 @@ function onEvent(e) {
         const lv = clamp(Math.round(Number(e.level)) || 1, 1, 3);
         txt = (lv >= 3 ? "🚨 " : "⚠ ") + "Cảnh báo mức " + lv + ": " + (flagListText(e.msg) || "có chỉ số bất thường");
         cls = "ev-lv" + lv;
+        // Bỏ qua nếu cảnh báo cùng mức vừa được ghi chưa đủ giãn cách (events đã sắp mới nhất lên đầu)
+        const last = events.find(x => x.cls === cls);
+        if (last && (ts || now) - last.t < ALARM_GAP_MS[lv]) skip = true;
     }
+
     else { txt = "ℹ Sự kiện: " + type; cls = "ev-local"; }
 
     // Khóa chống trùng: có ts thì dùng ts; không có ts mà có id thì dùng id; còn lại gom theo phút nhận
     const stamp = ts ? String(ts) : (e.id ? "-" : "r" + Math.floor(now / 60000));
     const k = ["ev", type, stamp, e.id || "", e.msg || "", e.level || "", e.reason || ""].join("|");
-    pushEvent({ k, t: ts || now, cls, txt });
+    if (!skip) pushEvent({ k, t: ts || now, cls, txt });
 
     if (pendingFeed && e.id === pendingFeed) {
         if (type === "feed_done") { endFeed(); showMsg("feedMsg", "✔ Đã cho ăn xong.", "ok"); }
