@@ -3,6 +3,7 @@ secrets.h
 *.local.js
 *.env
 *.local.h
+*.exe
 
 # ===== File rác của hệ điều hành / công cụ =====
 .DS_Store
