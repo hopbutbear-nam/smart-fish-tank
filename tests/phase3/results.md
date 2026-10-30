@@ -14,5 +14,6 @@ Trạng thái ban đầu lấy từ kế hoạch (cập nhật 29/10/2026). Đ�
 | T3.8 | Đổi config, khởi động lại vẫn giữ (NVS) | Chưa | | | | |
 | T3.9 | Còi đúng mẫu cảnh báo, nguy hiểm; tắt tiếng 30 phút | Chưa | | | | |
 | T3.10 | Rút router 5 phút: còi vẫn kêu, tự nối lại | Chưa | | | | |
+ | T3.11 | Bảng ca thử risk (E8) trên hàm risk của firmware | Đạt (chạy trên máy tính) | 2026-10-30 | Nam | T3.11_2026-10-30_mo-phong_bang-ca-thu.png | 35/35 ca, g++ trên PC; chưa chạy trên ESP32 |
 
 **Hoàn thành khi**: mọi bài trên đạt.
