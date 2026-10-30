@@ -46,6 +46,7 @@ const REASON_TEXT = {
     too_soon: "quá sớm (phải chờ ít nhất 60 giây giữa hai lần)",
     daily_limit: "đã đủ số lần trong 24 giờ qua",
     busy: "đang cho ăn",
+    no_time: "thiết bị chưa đồng bộ giờ, thử lại sau ít phút",
 };
 const CFG_FIELDS = {
     temp_min: "s_tmin", temp_max: "s_tmax", ph_min: "s_pmin", ph_max: "s_pmax",
@@ -537,6 +538,7 @@ function onEvent(e) {
 
     else { txt = "ℹ Sự kiện: " + type; cls = "ev-local"; }
 
+
     // Khóa chống trùng: có ts thì dùng ts; không có ts mà có id thì dùng id; còn lại gom theo phút nhận
     const stamp = ts ? String(ts) : (e.id ? "-" : "r" + Math.floor(now / 60000));
     const k = ["ev", type, stamp, e.id || "", e.msg || "", e.level || "", e.reason || ""].join("|");
@@ -648,11 +650,10 @@ function validateConfig(c) {
     if (c.ph_min >= c.ph_max) return "pH thấp nhất phải nhỏ hơn cao nhất.";
     if (c.ph_min < LIMIT.phMin || c.ph_max > LIMIT.phMax)
         return `pH phải nằm trong biên an toàn ${String(LIMIT.phMin).replace(".", ",")}–${String(LIMIT.phMax).replace(".", ",")}.`;
-    if (c.turb_max_pct < 0 || c.turb_max_pct > 100) return "Độ đục tối đa phải từ 0 đến 100.";
-    if (c.level_danger_pct < 0 || c.level_danger_pct >= c.level_min_pct || c.level_min_pct > 100)
+    if (!(c.turb_max_pct > 0) || c.turb_max_pct > 100 - L2_ADD.turb) return "Độ đục tối đa phải lớn hơn 0 và không quá " + (100 - L2_ADD.turb) + "."; if (c.level_danger_pct < 0 || c.level_danger_pct >= c.level_min_pct || c.level_min_pct > 100)
         return "Mực nước: mức nguy hiểm phải nhỏ hơn mức cảnh báo, và cảnh báo không quá 100.";
-    if (c.feed_ms < 100 || c.feed_ms > 3000) return "Thời gian quay một phần phải từ 100 đến 3000 ms.";
-    if (c.mute_min < 0 || c.mute_min > 240) return "Tắt tiếng phải từ 0 đến 240 phút.";
+    if (!Number.isInteger(c.feed_ms) || c.feed_ms < 100 || c.feed_ms > 3000) return "Thời gian quay một phần phải là số nguyên từ 100 đến 3000 ms.";
+    if (!Number.isInteger(c.mute_min) || c.mute_min < 0 || c.mute_min > 240) return "Tắt tiếng phải là số nguyên từ 0 đến 240 phút.";
     if (!c.feed_times.every(t => /^([01]\d|2[0-3]):[0-5]\d$/.test(t))) return "Giờ cho ăn phải dạng HH:MM, ví dụ 08:00.";
     if (new Set(c.feed_times).size !== c.feed_times.length) return "Có giờ cho ăn bị trùng nhau.";
     if (c.feed_times.length > MAX_FEED_TIMES) return `Tối đa ${MAX_FEED_TIMES} mốc giờ cho ăn (chừa 1 lần cho "Cho ăn ngay").`;

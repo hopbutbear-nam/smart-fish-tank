@@ -196,9 +196,9 @@ def validate_config(doc, current):
         new["buzzer_on"] = doc["buzzer_on"]
     if "feed_times" in doc:
         ft = doc["feed_times"]
-        if (not isinstance(ft, list) or len(ft) > 4
+        if (not isinstance(ft, list) or len(ft) > 3
                 or not all(isinstance(x, str) and TIME_RE.match(x) for x in ft)):
-            return None, "feed_times phải là tối đa 4 mốc dạng HH:MM"
+            return None, "feed_times phải là tối đa 3 mốc dạng HH:MM"
         new["feed_times"] = ft
     if "v" in doc and is_num(doc["v"]):
         new["v"] = int(doc["v"])
