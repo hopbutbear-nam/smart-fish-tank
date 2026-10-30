@@ -90,6 +90,18 @@
 #define DS18B20_POWERON_C       85.0f      // giá trị mặc định của chip ngay sau khi cấp nguồn (D4)
 #define ADC_DIVIDER             2.0f       // cầu chia áp 4,7k + 4,7k: nhân 2 để ra điện áp thật của module
 
+// --- Bổ sung cho sensors (bước 5) ---
+#define TEMP_PLAUSIBLE_MIN      (-55.0f)   // giới hạn đo của DS18B20; ngoài dải coi là lỗi
+#define TEMP_PLAUSIBLE_MAX      125.0f
+#define TEMP_CONVERT_MS         800        // DS18B20 12 bit cần tối đa 750 ms để chuyển đổi
+#define ADC_SAMPLE_GAP_MS       3          // khoảng cách giữa hai mẫu ADC của pH và độ đục
+#define ADC_V_MIN_VALID         0.05f      // điện áp module (V) ngoài dải này = dây đứt hoặc chập
+#define ADC_V_MAX_VALID         5.2f
+#define PH_PLAUSIBLE_MIN        0.0f       // pH tính ra ngoài 0 đến 14 = lỗi cảm biến
+#define PH_PLAUSIBLE_MAX        14.0f
+#define LEVEL_SAMPLES           8          // số mẫu đọc mực nước mỗi lần (giữ GPIO27 bật ngắn)
+#define LEVEL_SAMPLE_GAP_MS     1
+
 // ---------------------------------------------------------------------------
 // Hằng số hiệu chuẩn (bảng hiệu chuẩn Giai đoạn 2)
 // !!! GIÁ TRỊ TẠM, CHƯA ĐO: Giai đoạn 2 chưa làm. Đo xong phải thay đủ các dòng dưới đây
@@ -132,6 +144,9 @@
 #define BUZZ_L1_PERIOD_MS       60000UL    // mức 1: 1 tiếng ngắn mỗi 60 giây
 #define BUZZ_L2_PERIOD_MS       30000UL    // mức 2: 2 tiếng mỗi 30 giây (cách nhau BUZZ_BEEP_MS)
                                            // mức 3: kêu to nhất liên tục
+#define BUZZ_LEDC_CHANNEL       4          // chỉ dùng cho core 2.x (core 3.x tự cấp kênh); tránh kênh 0 của servo
+#define BUZZ_LEDC_BITS          8          // độ phân giải PWM
+#define BUZZ_ACTIVE_LOW         0          // đặt 1 nếu còi kêu liên tục khi chưa phát (đảo logic, mục E5)
 
 // ---------------------------------------------------------------------------
 // Mạng và độ bền (E6, G Giai đoạn 3)
