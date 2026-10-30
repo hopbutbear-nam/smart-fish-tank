@@ -1,17 +1,132 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <title>Bể cá thông minh</title>
-  <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#0b6e99">
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <main>
-    <h1>Bể cá thông minh</h1>
-    <p>Trang đang được xây dựng.</p>
+
+  <!-- MÀN HÌNH ĐĂNG NHẬP -->
+  <section id="login" class="login">
+    <h1>🐟 Bể cá thông minh</h1>
+    <form id="loginForm">
+      <label>Máy chủ MQTT
+        <input id="broker" readonly>
+      </label>
+      <label>Tên đăng nhập
+        <input id="user" value="webuser" autocomplete="username">
+      </label>
+      <label>Mật khẩu
+        <input id="pass" type="password" autocomplete="current-password">
+      </label>
+      <button type="submit">Đăng nhập</button>
+      <p id="loginMsg" class="msg"></p>
+    </form>
+  </section>
+
+  <!-- MÀN HÌNH CHÍNH -->
+  <main id="app" hidden>
+    <header>
+      <h1>🐟 Bể cá <span id="tankCode">tank01</span></h1>
+      <div class="bar">
+        <span id="conn" class="badge warn">Đang kết nối…</span>
+        <span id="tankStatus" class="badge">Bể: chưa rõ</span>
+        <span id="riskBadge" class="badge">Cảnh báo: chưa rõ</span>
+        <button id="logoutBtn" class="ghost" type="button">Đăng xuất</button>
+      </div>
+      <div id="updated" class="muted">Chưa có dữ liệu</div>
+    </header>
+
+    <div id="alert" class="alert" hidden></div>
+
+    <section id="cards" class="grid">
+      <div class="card nodata" id="c_temp">
+        <div class="label">Nhiệt độ</div>
+        <div class="value" id="v_temp">--</div>
+        <span class="chip nodata" id="n_temp">Chưa có dữ liệu</span>
+      </div>
+      <div class="card nodata" id="c_ph">
+        <div class="label">pH</div>
+        <div class="value" id="v_ph">--</div>
+        <span class="chip nodata" id="n_ph">Chưa có dữ liệu</span>
+      </div>
+      <div class="card nodata" id="c_turb">
+        <div class="label">Độ đục</div>
+        <div class="value" id="v_turb">--</div>
+        <span class="chip nodata" id="n_turb">Chưa có dữ liệu</span>
+      </div>
+      <div class="card nodata" id="c_level">
+        <div class="label">Mực nước</div>
+        <div class="value" id="v_level">--</div>
+        <span class="chip nodata" id="n_level">Chưa có dữ liệu</span>
+      </div>
+    </section>
+
+    <div class="legend" aria-label="Chú giải mức cảnh báo">
+      <span class="chip lv0">Mức 0 · Bình thường</span>
+      <span class="chip lv1">Mức 1 · Cảnh báo</span>
+      <span class="chip lv2">Mức 2 · Cảnh báo cao</span>
+      <span class="chip lv3">Mức 3 · Nguy hiểm</span>
+    </div>
+
+    <section class="panel feed">
+      <h2>Cho ăn</h2>
+      <button id="feedBtn" type="button">🍤 Cho ăn ngay</button>
+      <p id="feedMsg" class="msg"></p>
+    </section>
+
+    <section class="grid charts">
+      <div class="chartbox"><canvas id="chart_temp"></canvas></div>
+      <div class="chartbox"><canvas id="chart_ph"></canvas></div>
+      <div class="chartbox"><canvas id="chart_turb"></canvas></div>
+      <div class="chartbox"><canvas id="chart_level"></canvas></div>
+    </section>
+
+    <section class="panel settings">
+      <h2>Cài đặt</h2>
+      <div class="form">
+        <label>Nhiệt độ thấp nhất (°C)<input id="s_tmin" type="number" step="0.1" min="18" max="33" value="23"></label>
+        <label>Nhiệt độ cao nhất (°C)<input id="s_tmax" type="number" step="0.1" min="18" max="33" value="29"></label>
+        <label>pH thấp nhất<input id="s_pmin" type="number" step="0.1" min="5" max="8.5" value="6.0"></label>
+        <label>pH cao nhất<input id="s_pmax" type="number" step="0.1" min="5" max="8.5" value="8.0"></label>
+        <label>Độ đục tối đa (%)<input id="s_turb" type="number" step="1" min="0" max="100" value="30"></label>
+        <label>Mực nước cảnh báo dưới (%)<input id="s_lmin" type="number" step="1" min="0" max="100" value="30"></label>
+        <label>Mực nước nguy hiểm dưới (%)<input id="s_ldanger" type="number" step="1" min="0" max="100"
+            value="15"></label>
+        <label>Tắt tiếng còi (phút)<input id="s_mute" type="number" step="1" min="0" max="240" value="30"></label>
+        <label>Thời gian quay một phần ăn (ms)<input id="s_feedms" type="number" step="10" min="100" max="3000"
+            value="600"></label>
+        <label>Giờ cho ăn tự động (tối đa 3, ngăn cách bằng dấu phẩy)<input id="s_times" value="08:00, 18:00"></label>
+        <label class="check"><input id="s_buzzer" type="checkbox" checked> Bật còi cảnh báo</label>
+      </div>
+      <p class="hint">Biên an toàn: nhiệt độ 18–33 °C, pH 5,0–8,5. Mức 2 của nhiệt độ và độ đục tự đi theo ngưỡng mức 1
+        (cộng thêm 2 °C và 15 điểm %).</p>
+      <button id="saveBtn" type="button">Lưu cài đặt</button>
+      <p id="saveMsg" class="msg"></p>
+    </section>
+
+    <section class="panel events-panel">
+      <div class="panel-head">
+        <h2>Sự kiện gần đây</h2>
+        <button id="clearEvents" class="ghost" type="button">Xóa lịch sử</button>
+      </div>
+      <ul id="events" class="events"></ul>
+      <p class="hint">Lưu trong trình duyệt này (tối đa 100 sự kiện, 7 ngày). Sự kiện xảy ra lúc trang đang đóng sẽ
+        không có, vì thiết bị chỉ gửi sự kiện một lần và broker không giữ lại.</p>
+    </section>
   </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
   <script src="app.js"></script>
 </body>
+
 </html>
