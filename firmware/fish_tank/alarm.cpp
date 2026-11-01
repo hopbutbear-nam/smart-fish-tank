@@ -65,10 +65,14 @@ AlarmOut Alarm::tick(uint32_t now, uint8_t risk) {
       o.dutyPct = BUZZ_DUTY_QUIET_PCT;
       break;
     }
-    default:                                     // mức 3: to nhất, liên tục
-      o.on = true;
+    default: {                                   // mức 3: to nhất, 3 tiếng liền nhau mỗi BUZZ_L3_PERIOD_MS (5 giây)
+      uint32_t phase = elapsed % BUZZ_L3_PERIOD_MS;
+      o.on = phase < BUZZ_BEEP_MS ||                                   // tiếng thứ nhất
+             (phase >= 2UL * BUZZ_BEEP_MS && phase < 3UL * BUZZ_BEEP_MS) ||   // tiếng thứ hai
+             (phase >= 4UL * BUZZ_BEEP_MS && phase < 5UL * BUZZ_BEEP_MS);     // tiếng thứ ba
       o.dutyPct = BUZZ_DUTY_LOUD_PCT;
       break;
+    }
   }
   return o;
 }

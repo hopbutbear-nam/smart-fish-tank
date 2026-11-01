@@ -8,6 +8,7 @@ const TOPIC = {
     status: `fishtank/${TANK}/status`,
     event: `fishtank/${TANK}/event`,
     feed: `fishtank/${TANK}/cmd/feed`,
+    mute: `fishtank/${TANK}/cmd/mute`,
     config: `fishtank/${TANK}/config`,
 };
 
@@ -22,6 +23,7 @@ const EVT_MAX_AGE = 7 * 24 * 3600 * 1000;  // giữ sự kiện 7 ngày
 const EVT_SHOW = 50;                       // số sự kiện hiển thị
 const ALARM_GAP_MS = { 1: 60000, 2: 30000, 3: 15000 };   // giãn cách tối thiểu giữa hai dòng cảnh báo CÙNG MỨC: mức 1 = 60 giây, mức 2 = 30 giây, mức 3 = 15 giây
 const FEED_WAIT_MS = 15000;                // chờ phản hồi cho ăn tối đa 15 giây
+const MUTE_WAIT_MS = 10000;                // chờ phản hồi tắt tiếng tối đa 10 giây
 const MAX_FEED_TIMES = 3;                  // D6 (đề xuất): tối đa 3 mốc, chừa 1 lần cho "Cho ăn ngay". Đổi thành 4 nếu nhóm chốt 4.
 
 const LIMIT = { tempMin: 18, tempMax: 33, phMin: 5.0, phMax: 8.5 };   // biên nguy hiểm (mục E6, E8)
@@ -49,6 +51,10 @@ const REASON_TEXT = {
     busy: "đang cho ăn",
     no_time: "thiết bị chưa đồng bộ giờ, thử lại sau ít phút",
 };
+const MUTE_REASON_TEXT = {
+    no_alarm: "hiện không có cảnh báo nào để tắt tiếng",
+    disabled: "thời gian tắt tiếng đang đặt là 0 phút (xem Cài đặt)",
+};
 const CFG_FIELDS = {
     temp_min: "s_tmin", temp_max: "s_tmax", ph_min: "s_pmin", ph_max: "s_pmax",
     turb_max_pct: "s_turb", level_min_pct: "s_lmin", level_danger_pct: "s_ldanger",
@@ -66,6 +72,8 @@ let prevOnline = null;      // để ghi sự kiện online/offline khi trạng 
 let wentOffline = false;
 let pendingFeed = null;
 let feedTimer = null;
+let pendingMute = null;    // "mute" hoặc "unmute" khi đang chờ phản hồi
+let muteTimer = null;
 let history = [];
 let lastHistT = 0;
 let events = [];
@@ -336,11 +344,25 @@ function overallRisk(d, levels) {
     return Math.max(0, ...levels);
 }
 
+// Thanh tắt tiếng còi: chỉ hiện khi đang có cảnh báo. d.muted do firmware gửi trong telemetry.
+function renderMuteBar(risk, d) {
+    const bar = $("muteBar");
+    bar.hidden = risk < 1;
+    if (risk < 1) return;
+    const muted = d.muted === true;
+    $("muteBtn").hidden = muted;
+    $("unmuteBtn").hidden = !muted;
+    $("muteBtn").textContent = "🔕 Tắt tiếng còi " + activeCfg.mute_min + " phút";
+    if (muted && !pendingMute) showMsg("muteMsg", "Còi đang tắt tiếng. Tự bật lại khi cảnh báo tăng mức, hết cảnh báo hoặc hết giờ.", "");
+    else if (!muted && !pendingMute) showMsg("muteMsg", "", "");
+}
+
 function renderAlert(risk, d) {
     const al = $("alert"), rb = $("riskBadge");
     rb.textContent = risk === 0 ? "Cảnh báo: bình thường" : "Cảnh báo: mức " + risk;
     rb.className = "badge lv" + risk;
     document.title = risk >= 1 ? `⚠ Mức ${risk} · Bể cá thông minh` : "Bể cá thông minh";
+    renderMuteBar(risk, d);
     if (risk < 1) { al.hidden = true; return; }
     const names = flagListText(Array.isArray(d.flags) ? d.flags : []);
     const head = risk >= 3 ? "🚨 MỨC 3 · NGUY HIỂM" : risk === 2 ? "⚠ MỨC 2 · Cảnh báo cao" : "⚠ Mức 1 · Cảnh báo";
@@ -526,7 +548,7 @@ function onEvent(e) {
     let txt, cls, skip = false;
 
     if (type === "boot") { txt = "🔄 Thiết bị khởi động (firmware " + (e.fw || "?") + ")"; cls = "ev-boot"; }
-    else if (type === "feed_done") { txt = "🍤 Đã cho ăn " + (e.portions || 1) + " phần"; cls = "ev-feed"; }
+    else if (type === "feed_done") { txt = "🍤 Đã cho ăn " + (e.portions || 1) + " phần" + (e.id === "schedule" ? " (theo lịch)" : ""); cls = "ev-feed"; }
     else if (type === "feed_rejected") { txt = "⛔ Từ chối cho ăn: " + (REASON_TEXT[e.reason] || e.reason || "không rõ lý do"); cls = "ev-reject"; }
     else if (type === "alarm") {
         const lv = clamp(Math.round(Number(e.level)) || 1, 1, 3);
@@ -537,6 +559,10 @@ function onEvent(e) {
         if (last && (ts || now) - last.t < ALARM_GAP_MS[lv]) skip = true;
     }
 
+    else if (type === "mute") { txt = "🔕 Đã tắt tiếng còi " + (e.minutes || "?") + " phút"; cls = "ev-local"; }
+    else if (type === "unmute") { txt = "🔔 Đã bật lại tiếng còi"; cls = "ev-local"; }
+    else if (type === "mute_rejected") { txt = "⛔ Không tắt tiếng được: " + (MUTE_REASON_TEXT[e.reason] || e.reason || "không rõ lý do"); cls = "ev-reject"; }
+    else if (type === "config_rejected") { txt = "⛔ Thiết bị từ chối cài đặt: " + (e.reason || "không rõ lý do"); cls = "ev-reject"; }
     else { txt = "ℹ Sự kiện: " + type; cls = "ev-local"; }
 
 
@@ -544,6 +570,12 @@ function onEvent(e) {
     const stamp = ts ? String(ts) : (e.id ? "-" : "r" + Math.floor(now / 60000));
     const k = ["ev", type, stamp, e.id || "", e.msg || "", e.level || "", e.reason || ""].join("|");
     if (!skip) pushEvent({ k, t: ts || now, cls, txt });
+
+    if (pendingMute) {
+        if (type === "mute" && pendingMute === "mute") endMute("✔ Đã tắt tiếng " + (e.minutes || "?") + " phút.", "ok");
+        else if (type === "unmute" && pendingMute === "unmute") endMute("✔ Đã bật lại tiếng còi.", "ok");
+        else if (type === "mute_rejected") endMute("✖ Không tắt tiếng được: " + (MUTE_REASON_TEXT[e.reason] || e.reason), "bad");
+    }
 
     if (pendingFeed && e.id === pendingFeed) {
         if (type === "feed_done") { endFeed(); showMsg("feedMsg", "✔ Đã cho ăn xong.", "ok"); }
@@ -640,6 +672,31 @@ $("feedBtn").addEventListener("click", () => {
         if (pendingFeed === id) { endFeed(); showMsg("feedMsg", "Chưa nhận được phản hồi từ thiết bị.", "warn"); }
     }, FEED_WAIT_MS);
 });
+
+/* ====== TẮT TIẾNG CÒI ====== */
+function endMute(text, cls) {
+    pendingMute = null;
+    clearTimeout(muteTimer);
+    $("muteBtn").disabled = false;
+    $("unmuteBtn").disabled = false;
+    showMsg("muteMsg", text, cls);
+}
+function sendMute(action) {
+    if (!client || !client.connected) { showMsg("muteMsg", "Chưa kết nối.", "bad"); return; }
+    if (action === "mute" && activeCfg.mute_min === 0) { showMsg("muteMsg", "Thời gian tắt tiếng đang đặt là 0 phút (xem Cài đặt).", "bad"); return; }
+    pendingMute = action;
+    $("muteBtn").disabled = true;
+    $("unmuteBtn").disabled = true;
+    showMsg("muteMsg", "Đang gửi lệnh…", "");
+    // KHÔNG đặt retain: lệnh retained sẽ bị giao lại mỗi lần thiết bị nối lại
+    client.publish(TOPIC.mute, JSON.stringify({ action }), { qos: 1, retain: false }, (err) => {
+        if (err) endMute("Gửi lệnh thất bại.", "bad");
+    });
+    clearTimeout(muteTimer);
+    muteTimer = setTimeout(() => { if (pendingMute === action) endMute("Chưa nhận được phản hồi từ thiết bị.", "warn"); }, MUTE_WAIT_MS);
+}
+$("muteBtn").addEventListener("click", () => sendMute("mute"));
+$("unmuteBtn").addEventListener("click", () => sendMute("unmute"));
 
 /* ====== CÀI ĐẶT ====== */
 function readNum(id) { const s = $(id).value.trim(); return s === "" ? NaN : Number(s); }

@@ -255,6 +255,7 @@ class FakeEsp32:
         self.t_event = f"fishtank/{self.tank}/event"
         self.t_cmd = f"fishtank/{self.tank}/cmd/#"
         self.t_feed = f"fishtank/{self.tank}/cmd/feed"
+        self.t_mute = f"fishtank/{self.tank}/cmd/mute"
         self.t_config = f"fishtank/{self.tank}/config"
 
         self.q = queue.Queue()
@@ -270,6 +271,10 @@ class FakeEsp32:
         self.force_publish = True
         self.next_sample = 0.0
         self.last_publish = 0.0
+
+        self.muted = False             # tắt tiếng còi (cmd/mute)
+        self.mute_until = 0.0          # monotonic
+        self.mute_risk = 0             # risk lúc bấm tắt tiếng
 
         self.last_feed_id = ""
         self.feeding = None            # {"id","portions","end"}
@@ -352,7 +357,7 @@ class FakeEsp32:
             "v": 1, "ts": int(time.time()),
             "temp_c": r["temp_c"], "ph": r["ph"], "turb_v": r["turb_v"],
             "turb_pct": r["turb_pct"], "level_pct": r["level_pct"],
-            "risk": self.risk, "flags": self.flags,
+            "risk": self.risk, "flags": self.flags, "muted": self.muted,
             "rssi": int(round(random.gauss(-61, 2))),
             "uptime_s": int(time.monotonic() - self.t0),
             "fw": FW_VERSION,
@@ -370,6 +375,8 @@ class FakeEsp32:
             return
         if topic == self.t_feed:
             self.handle_feed(doc)
+        elif topic == self.t_mute:
+            self.handle_mute(doc)
         elif topic == self.t_config:
             self.handle_config(doc)
 
@@ -381,6 +388,34 @@ class FakeEsp32:
         self.cfg = new
         self.force_publish = True
         log(f"[config] đã áp dụng: {json.dumps(new, ensure_ascii=False)}")
+
+    def handle_mute(self, doc):
+        """cmd/mute: {"action":"mute"} hoặc {"action":"unmute"} (giống firmware: Alarm::mute / unmute)."""
+        if not isinstance(doc, dict):
+            return
+        action = doc.get("action")
+        if action == "unmute":
+            self.muted = False
+            self.force_publish = True
+            log("[mute] đã bỏ tắt tiếng")
+            self.publish_event(type="unmute", ts=int(time.time()))
+        elif action == "mute":
+            minutes = int(self.cfg["mute_min"])
+            if minutes == 0:
+                log("[mute] từ chối: mute_min = 0 (disabled)")
+                self.publish_event(type="mute_rejected", reason="disabled", ts=int(time.time()))
+            elif self.risk == 0:
+                log("[mute] từ chối: không có cảnh báo (no_alarm)")
+                self.publish_event(type="mute_rejected", reason="no_alarm", ts=int(time.time()))
+            else:
+                self.muted = True
+                self.mute_risk = self.risk
+                self.mute_until = time.monotonic() + minutes * 60.0
+                self.force_publish = True
+                log(f"[mute] tắt tiếng {minutes} phút (risk lúc bấm = {self.risk})")
+                self.publish_event(type="mute", minutes=minutes, ts=int(time.time()))
+        else:
+            log(f"[mute] bỏ qua action lạ: {action!r}")
 
     def reject(self, fid, reason):
         log(f"[cho ăn] từ chối id={fid}: {reason}")
@@ -471,7 +506,7 @@ class FakeEsp32:
         r = self.reading or {}
         feeding = f"đang cho ăn id={self.feeding['id']}" if self.feeding else "rảnh"
         log(f"kết nối={'có' if self.connected else 'KHÔNG'} | risk={self.risk} | "
-            f"mức từng cờ={self.levels} | giá trị={r} | cho ăn: {feeding}, "
+            f"mức từng cờ={self.levels} | tắt tiếng={'có' if self.muted else 'không'} | giá trị={r} | cho ăn: {feeding}, "
             f"{len(self.feeds)} lần trong 24h (tối đa {self.args.max_per_day}, "
             f"cách nhau {self.args.min_interval:g}s)")
         log(f"config hiện tại: {json.dumps(self.cfg, ensure_ascii=False)}")
@@ -489,7 +524,13 @@ class FakeEsp32:
         if self.force_publish or now >= self.next_sample:
             self.reading = self.sample()
             risk, flags, levels = evaluate(self.reading, self.cfg)
-            changed = (risk != self.risk) or (flags != self.flags)
+            muted_changed = False
+            # Giống Alarm::tick: tắt tiếng tự hủy khi risk tăng quá mức lúc bấm, khi risk về 0, hoặc hết giờ
+            if self.muted and (risk == 0 or risk > self.mute_risk or now >= self.mute_until):
+                self.muted = False
+                muted_changed = True
+                log("[mute] tắt tiếng tự hủy (risk tăng, về 0 hoặc hết giờ)")
+            changed = (risk != self.risk) or (flags != self.flags) or muted_changed
             if risk > self.risk and self.connected:
                 self.publish_event(type="alarm", level=risk, msg=",".join(flags), ts=int(time.time()))
             self.risk, self.flags, self.levels = risk, flags, levels

@@ -27,6 +27,7 @@
 #define TOPIC_STATUS        TOPIC_BASE "status"      // online / offline, retained (Last Will QoS 1)
 #define TOPIC_EVENT         TOPIC_BASE "event"       // QoS 0
 #define TOPIC_CMD_FEED      TOPIC_BASE "cmd/feed"    // QoS 1 (ESP32 subscribe)
+#define TOPIC_CMD_MUTE      TOPIC_BASE "cmd/mute"    // QoS 1 (ESP32 subscribe): {"action":"mute"} hoặc {"action":"unmute"}
 #define TOPIC_CMD_ALL       TOPIC_BASE "cmd/#"
 #define TOPIC_CONFIG        TOPIC_BASE "config"      // QoS 1, retained (ESP32 subscribe)
 
@@ -149,7 +150,7 @@
 #define BUZZ_BEEP_MS            200
 #define BUZZ_L1_PERIOD_MS       60000UL    // mức 1: 1 tiếng ngắn mỗi 60 giây
 #define BUZZ_L2_PERIOD_MS       30000UL    // mức 2: 2 tiếng mỗi 30 giây (cách nhau BUZZ_BEEP_MS)
-                                           // mức 3: kêu to nhất liên tục
+#define BUZZ_L3_PERIOD_MS       5000UL     // mức 3: 3 tiếng to nhất liền nhau mỗi 5 giây (mỗi tiếng BUZZ_BEEP_MS, cách nhau BUZZ_BEEP_MS)
 #define BUZZ_LEDC_CHANNEL       4          // chỉ dùng cho core 2.x (core 3.x tự cấp kênh); tránh kênh 0 của servo
 #define BUZZ_LEDC_BITS          8          // độ phân giải PWM
 #define BUZZ_ACTIVE_LOW         0          // đặt 1 nếu còi kêu liên tục khi chưa phát (đảo logic, mục E5)

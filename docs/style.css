@@ -258,6 +258,15 @@ button.ghost {
     animation: none;
 }
 
+/* ===== THANH TẮT TIẾNG CÒI ===== */
+.mutebar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+}
+
 /* ===== THẺ CHỈ SỐ ===== */
 .grid {
     display: grid;

@@ -4,7 +4,7 @@
 //   Mức 0: im lặng
 //   Mức 1: 1 tiếng ngắn nhỏ (BUZZ_BEEP_MS) mỗi 60 giây
 //   Mức 2: 2 tiếng nhỏ, cách nhau BUZZ_BEEP_MS, mỗi 30 giây
-//   Mức 3: kêu to nhất, liên tục
+//   Mức 3: 3 tiếng to nhất liền nhau (mỗi tiếng BUZZ_BEEP_MS, cách nhau BUZZ_BEEP_MS) mỗi BUZZ_L3_PERIOD_MS (5 giây)
 //
 // Lớp Alarm là máy trạng thái THUẦN: nhận (thời gian, risk) và trả về "còi bật hay tắt, độ rộng xung bao nhiêu %".
 // Phần ghi ra chân còi (ledc PWM) nằm cuối file, chỉ khi biên dịch cho ESP32.

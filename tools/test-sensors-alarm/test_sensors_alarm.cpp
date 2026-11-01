@@ -228,7 +228,13 @@ int main() {
     Alarm a;
     AlarmOut o = tk(a, 1000, 3);
     expect(o.on && o.dutyPct == BUZZ_DUTY_LOUD_PCT, "Mức 3: kêu to nhất");
-    expect(tk(a, 1500, 3).on && tk(a, 31000, 3).on && tk(a, 999999, 3).on, "Mức 3: kêu liên tục");
+    expect(tk(a, 1199, 3).on, "Mức 3: tiếng thứ nhất kéo dài 200 ms");
+    expect(!tk(a, 1200, 3).on && !tk(a, 1399, 3).on, "Mức 3: nghỉ 200 ms");
+    expect(tk(a, 1400, 3).on && tk(a, 1599, 3).on && tk(a, 1400, 3).dutyPct == BUZZ_DUTY_LOUD_PCT, "Mức 3: tiếng thứ hai 200 ms, vẫn to nhất");
+    expect(!tk(a, 1600, 3).on && !tk(a, 1799, 3).on, "Mức 3: nghỉ 200 ms");
+    expect(tk(a, 1800, 3).on && tk(a, 1999, 3).on, "Mức 3: tiếng thứ ba 200 ms");
+    expect(!tk(a, 2000, 3).on && !tk(a, 5999, 3).on, "Mức 3: im lặng đến hết chu kỳ 5 giây");
+    expect(tk(a, 6000, 3).on && tk(a, 6400, 3).on && tk(a, 6800, 3).on, "Mức 3: lặp lại đúng 5 giây sau (3 tiếng nữa)");
     expect(!tk(a, 1000000, 0).on, "Risk về 0: im ngay");
   }
   {
@@ -265,6 +271,12 @@ int main() {
     tk(a, 1801000, 2);
     expect(!a.muted(), "Đủ 30 phút: hết tắt tiếng");
     expect(tk(a, 1830000, 2).on, "Sau đó còi kêu lại theo chu kỳ");
+  }
+  {
+    Alarm a; a.configure(true, 30);
+    tk(a, 0, 3); a.mute(0);
+    expect(a.muted() && !tk(a, 5000, 3).on && !tk(a, 1799999, 3).on, "Mức 3: tắt tiếng đủ 30 phút, kể cả đúng lúc vốn có tiếng");
+    expect(tk(a, 1800000, 3).on && !a.muted(), "Mức 3: hết 30 phút, còi kêu lại theo mẫu 3 tiếng");
   }
   {
     Alarm a; a.configure(true, 30);

@@ -7,6 +7,7 @@ Dùng MQTTX, kết nối tài khoản `esp32` (client ID `esp32-tank01`) qua mqt
 | `telemetry-*.json` | fishtank/tank01/telemetry | 0 | bật |
 | `event-*.json` | fishtank/tank01/event | 0 | tắt |
 | (chữ) `online` / `offline` | fishtank/tank01/status | 1 | bật |
+| `cmd-feed.json`, `cmd-mute.json`, `cmd-unmute.json` | fishtank/tank01/cmd/feed, cmd/mute (kết nối bằng tài khoản `webuser`) | 1 | **tắt** (lệnh retained sẽ bị giao lại mỗi lần ESP32 nối lại) |
 
 Last Will cấu hình trong MQTTX: topic status, QoS 1, Retain bật, payload `offline`.
 Với `event-feed-*`, thay `id` bằng đúng `id` mà web vừa gửi trong `cmd/feed`.

@@ -32,10 +32,13 @@ uint32_t netMqttDownMs(uint32_t nowMs);  // đã mất MQTT liên tục bao lâu
 // Lấy lệnh / config đang chờ. Trả true và điền out nếu có. Gọi lặp tới khi false.
 bool netTakeFeedCmd(NetFeedCmd& out);
 bool netTakeConfig(AppConfig& out);      // đã gộp vào cấu hình cũ và đã qua configValidate()
+bool netTakeMuteCmd(bool& wantMute);     // lệnh cmd/mute đang chờ: wantMute = true là "mute", false là "unmute"
 
 // Gửi lên broker. Trả false nếu chưa nối MQTT hoặc gửi lỗi.
-bool netPublishTelemetry(const SensorValues& s, const RiskResult& r);   // QoS 0, retained
+bool netPublishTelemetry(const SensorValues& s, const RiskResult& r, bool muted);   // QoS 0, retained; muted = còi đang tắt tiếng
 bool netPublishFeedRejected(const char* id, const char* reason);        // QoS 0
 bool netPublishFeedDone(const char* id, uint8_t portions);              // QoS 0
 bool netPublishAlarm(const RiskResult& r);                              // event "alarm" (level = risk, msg = các cờ); false nếu risk = 0
+bool netPublishMute(bool muted, uint16_t minutes);                     // event "mute" (kèm minutes) hoặc "unmute"; QoS 0
+bool netPublishMuteRejected(const char* reason);                        // event "mute_rejected": reason = no_alarm | disabled
 #endif

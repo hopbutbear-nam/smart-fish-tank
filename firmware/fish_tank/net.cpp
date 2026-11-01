@@ -26,6 +26,7 @@
 #define MQTT_SOCKET_TO_S   5         // giây: giới hạn chờ khi nối và khi đọc
 #define TLS_HANDSHAKE_TO_S 8         // giây
 #define FEED_QUEUE_LEN     4
+#define MUTE_QUEUE_LEN     4
 
 // ---------------------------------------------------------------------------
 // Trạng thái (một thể hiện duy nhất)
@@ -50,6 +51,9 @@ static uint32_t s_lastMqttUpMs = 0;
 
 static NetFeedCmd s_feedQ[FEED_QUEUE_LEN];
 static uint8_t    s_feedHead = 0, s_feedCount = 0;
+
+static bool    s_muteQ[MUTE_QUEUE_LEN];     // true = mute, false = unmute
+static uint8_t s_muteHead = 0, s_muteCount = 0;
 
 static AppConfig s_pendingCfg;
 static bool      s_hasPendingCfg = false;
@@ -79,7 +83,7 @@ uint32_t netMqttDownMs(uint32_t nowMs) {
 // ---------------------------------------------------------------------------
 // Gửi event (JSON dựng bằng ArduinoJson để id từ web được escape đúng)
 // Khớp onEvent() trong docs/app.js và fake_esp32.py: type, ts (giây), id, reason, portions, fw, level, msg (chuỗi).
-//   type: boot | feed_done | feed_rejected | alarm | config_rejected
+//   type: boot | feed_done | feed_rejected | alarm | config_rejected | mute | unmute | mute_rejected
 // ---------------------------------------------------------------------------
 static bool sendEventDoc(JsonDocument& doc) {
   uint32_t ts = netEpoch();
@@ -117,6 +121,18 @@ bool netPublishAlarm(const RiskResult& r) {
   doc["level"] = (int)r.risk;
   doc["msg"] = msg;                           // msg còn sống tới khi serialize xong trong sendEventDoc
   return sendEventDoc(doc);
+}
+
+bool netPublishMute(bool muted, uint16_t minutes) {
+  if (!s_mqtt.connected()) return false;
+  JsonDocument doc;
+  doc["type"] = muted ? "mute" : "unmute";
+  if (muted) doc["minutes"] = minutes;
+  return sendEventDoc(doc);
+}
+
+bool netPublishMuteRejected(const char* reason) {
+  return publishEvent("mute_rejected", nullptr, reason, 0);
 }
 
 static bool publishBoot() {
@@ -159,7 +175,7 @@ static void fmtNum(char* out, size_t len, bool ok, float v, int decimals) {
   else snprintf(out, len, "null");
 }
 
-bool netPublishTelemetry(const SensorValues& s, const RiskResult& r) {
+bool netPublishTelemetry(const SensorValues& s, const RiskResult& r, bool muted) {
   if (!s_mqtt.connected()) return false;
   char temp[16], ph[16], turbV[16], turb[16], level[16], flags[96], tsPart[24];
   fmtNum(temp, sizeof(temp), s.temp_ok, s.temp_c, 1);
@@ -174,8 +190,8 @@ bool netPublishTelemetry(const SensorValues& s, const RiskResult& r) {
 
   char buf[320];
   int n = snprintf(buf, sizeof(buf),
-      "{\"v\":1,%s\"temp_c\":%s,\"ph\":%s,\"turb_v\":%s,\"turb_pct\":%s,\"level_pct\":%s,\"risk\":%u,\"flags\":%s,\"rssi\":%d,\"uptime_s\":%lu,\"fw\":\"%s\"}",
-      tsPart, temp, ph, turbV, turb, level, (unsigned)r.risk, flags, (int)WiFi.RSSI(),
+      "{\"v\":1,%s\"temp_c\":%s,\"ph\":%s,\"turb_v\":%s,\"turb_pct\":%s,\"level_pct\":%s,\"risk\":%u,\"muted\":%s,\"flags\":%s,\"rssi\":%d,\"uptime_s\":%lu,\"fw\":\"%s\"}",
+      tsPart, temp, ph, turbV, turb, level, (unsigned)r.risk, muted ? "true" : "false", flags, (int)WiFi.RSSI(),
       (unsigned long)(millis() / 1000UL), FW_VERSION);
   if (n <= 0 || n >= (int)sizeof(buf)) return false;
   return s_mqtt.publish(TOPIC_TELEMETRY, buf, true);
@@ -213,6 +229,38 @@ static void handleFeedMessage(const byte* payload, unsigned int len) {
   }
   s_feedQ[(s_feedHead + s_feedCount) % FEED_QUEUE_LEN] = c;
   s_feedCount++;
+}
+
+// ---------------------------------------------------------------------------
+// Nhận lệnh tắt tiếng: cmd/mute  {"action":"mute"} hoặc {"action":"unmute"}
+// Lưu ý: web KHÔNG được publish cmd/mute với retain (lệnh retained sẽ bị giao lại mỗi lần nối lại).
+// ---------------------------------------------------------------------------
+static void handleMuteMessage(const byte* payload, unsigned int len) {
+  if (len == 0) return;                                   // payload rỗng = xóa retained, bỏ qua
+  JsonDocument doc;
+  if (deserializeJson(doc, (const char*)payload, len)) {
+    Serial.println("[net] cmd/mute: JSON loi, bo qua");
+    return;
+  }
+  if (!doc.is<JsonObject>()) return;
+  JsonVariantConst av = doc.as<JsonObjectConst>()["action"];
+  if (!av.is<const char*>()) { Serial.println("[net] cmd/mute: thieu action, bo qua"); return; }
+  const char* a = av.as<const char*>();
+  bool want;
+  if (strcmp(a, "mute") == 0) want = true;
+  else if (strcmp(a, "unmute") == 0) want = false;
+  else { Serial.println("[net] cmd/mute: action la, bo qua"); return; }
+  if (s_muteCount >= MUTE_QUEUE_LEN) { Serial.println("[net] hang doi lenh tat tieng day, bo lenh"); return; }
+  s_muteQ[(s_muteHead + s_muteCount) % MUTE_QUEUE_LEN] = want;
+  s_muteCount++;
+}
+
+bool netTakeMuteCmd(bool& wantMute) {
+  if (s_muteCount == 0) return false;
+  wantMute = s_muteQ[s_muteHead];
+  s_muteHead = (s_muteHead + 1) % MUTE_QUEUE_LEN;
+  s_muteCount--;
+  return true;
 }
 
 bool netTakeFeedCmd(NetFeedCmd& out) {
@@ -319,6 +367,7 @@ bool netTakeConfig(AppConfig& out) {
 // ---------------------------------------------------------------------------
 static void onMessage(char* topic, byte* payload, unsigned int len) {
   if (strcmp(topic, TOPIC_CMD_FEED) == 0) handleFeedMessage(payload, len);
+  else if (strcmp(topic, TOPIC_CMD_MUTE) == 0) handleMuteMessage(payload, len);
   else if (strcmp(topic, TOPIC_CONFIG) == 0) handleConfigMessage(payload, len);
 }
 
@@ -364,7 +413,8 @@ static void tryConnectMqtt(uint32_t now) {
   if (ok) {
     bool s1 = s_mqtt.subscribe(TOPIC_CMD_FEED, 1);
     bool s2 = s_mqtt.subscribe(TOPIC_CONFIG, 1);
-    ok = s1 && s2;
+    bool s3 = s_mqtt.subscribe(TOPIC_CMD_MUTE, 1);
+    ok = s1 && s2 && s3;
     if (!ok) {
       Serial.println("[net] subscribe loi, ngat de thu lai");
       s_mqtt.disconnect();

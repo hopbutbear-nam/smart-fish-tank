@@ -1,7 +1,7 @@
 // sw.js: service worker tối thiểu cho PWA.
 // Chiến lược: ưu tiên mạng, mất mạng thì dùng bản đã lưu (tránh kẹt bản cũ khi nhóm cập nhật code).
 // Chỉ xử lý tệp cùng nguồn; CDN và WebSocket MQTT không bị can thiệp.
-const CACHE = "fishtank-shell-v2";
+const CACHE = "fishtank-shell-v3";
 const SHELL = ["./", "index.html", "style.css", "app.js", "manifest.json", "icons/icon.svg"];
 
 self.addEventListener("install", (e) => {

@@ -30,6 +30,7 @@ static uint32_t g_nextSchedMs = 0;
 static uint32_t g_nextLogMs = 0;
 static uint8_t  g_prevRisk = 0;
 static uint16_t g_prevFlags = 0;         // mặt nạ bit các cờ đang có (để gửi telemetry ngay khi cờ đổi); 16 bit vì FL_COUNT = 10
+static bool     g_prevMuted = false;     // để gửi telemetry ngay khi trạng thái tắt tiếng đổi
 static uint32_t g_lastSchedRejectEpoch = 0;
 
 static bool due(uint32_t now, uint32_t target) {
@@ -78,6 +79,29 @@ static void handleRemoteFeed(const NetFeedCmd& cmd, uint32_t epoch, uint32_t now
     return;
   }
   startFeed(cmd.id, feedClampPortions(cmd.portions), epoch, now);
+}
+
+// Lệnh tắt tiếng từ web. Alarm::mute() chỉ có hiệu lực khi đang có cảnh báo và mute_min > 0.
+static void handleRemoteMute(bool wantMute, uint32_t now) {
+  if (!wantMute) {
+    g_alarm.unmute();
+    Serial.println("[mute] da bo tat tieng");
+    netPublishMute(false, 0);
+    return;
+  }
+  if (g_cfg.mute_min == 0) {
+    Serial.println("[mute] tu choi: mute_min = 0");
+    netPublishMuteRejected("disabled");
+    return;
+  }
+  g_alarm.mute(now);
+  if (!g_alarm.muted()) {
+    Serial.println("[mute] tu choi: khong co canh bao");
+    netPublishMuteRejected("no_alarm");
+    return;
+  }
+  Serial.printf("[mute] tat tieng %u phut\n", (unsigned)g_cfg.mute_min);
+  netPublishMute(true, g_cfg.mute_min);
 }
 
 static void handleSchedule(uint32_t epoch, uint32_t now) {
@@ -189,6 +213,10 @@ void loop() {
 
   // 3) Còi: chạy độc lập với mạng
   alarmApply(g_alarm.tick(now, g_risk.risk));
+  if (g_alarm.muted() != g_prevMuted) {  // tắt tiếng bật, tắt hoặc tự hủy: báo web ngay
+    g_prevMuted = g_alarm.muted();
+    g_nextTelemMs = now;
+  }
 
   // 4) Cho ăn: kết thúc lần quay, rồi lịch tự động
   bool feedDone = g_runner.tick(now);
@@ -215,9 +243,13 @@ void loop() {
   NetFeedCmd cmd;
   while (netTakeFeedCmd(cmd)) handleRemoteFeed(cmd, epoch, now);
 
+  // 5c) Lệnh tắt tiếng còi từ web (cmd/mute)
+  bool wantMute;
+  while (netTakeMuteCmd(wantMute)) handleRemoteMute(wantMute, now);
+
   // 6) Telemetry mỗi TELEMETRY_PERIOD_MS, và ngay khi risk hoặc cờ đổi (g_nextTelemMs = now ở trên)
   if (g_sensors.ready() && netMqttUp() && due(now, g_nextTelemMs)) {
-    bool ok = netPublishTelemetry(g_sensors.values(), g_risk);
+    bool ok = netPublishTelemetry(g_sensors.values(), g_risk, g_alarm.muted());
     g_nextTelemMs = now + (ok ? TELEMETRY_PERIOD_MS : 1000UL);
   }
 
