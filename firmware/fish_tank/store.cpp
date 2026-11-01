@@ -16,7 +16,10 @@ AppConfig configDefaults() {
   c.buzzer_on = DEF_BUZZER_ON;
   c.mute_min = DEF_MUTE_MIN;
   c.feed_ms = FEED_MS_DEFAULT;
-  c.feed_count = 0;
+  c.feed_count = DEF_FEED_COUNT;                       // mặc định 08:00, 14:00, 18:00 (nhóm chốt, xem documentation/fix-plan.md)
+  c.feed_min[0] = DEF_FEED_MIN_0;
+  c.feed_min[1] = DEF_FEED_MIN_1;
+  c.feed_min[2] = DEF_FEED_MIN_2;
   return c;
 }
 

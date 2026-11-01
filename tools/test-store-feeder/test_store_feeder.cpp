@@ -44,6 +44,8 @@ int main() {
   printf("=== store: kiểm tra cấu hình ===\n");
   AppConfig c = configDefaults();
   expect(configValidate(c, err, sizeof(err)), "Cấu hình mặc định hợp lệ");
+  expect(c.feed_count == 3 && c.feed_min[0] == 480 && c.feed_min[1] == 840 && c.feed_min[2] == 1080,
+         "Lịch cho ăn mặc định: 3 mốc 08:00, 14:00, 18:00");
   { RiskThresholds th = configThresholds(c);
     expect(th.temp_danger_min == 18.0f && th.temp_danger_max == 33.0f && th.ph_danger_min == 5.0f && th.ph_danger_max == 8.5f,
            "configThresholds: có đủ 4 biên nguy hiểm"); }
@@ -94,13 +96,13 @@ int main() {
            c.feed_min[0] == 480 && c.feed_min[1] == 1080, "Hai mốc: tự sắp tăng dần (08:00, 18:00)"); }
   { const char* t[] = {"08:00", "08:00"};
     AppConfig d = configDefaults();
-    expect(!configParseFeedTimes(t, 2, d, err, sizeof(err)) && d.feed_count == 0, "Hai mốc trùng: từ chối, không đổi cấu hình"); }
+    expect(!configParseFeedTimes(t, 2, d, err, sizeof(err)) && d.feed_count == DEF_FEED_COUNT, "Hai mốc trùng: từ chối, không đổi cấu hình"); }
   { const char* t[] = {"06:00", "12:00", "18:00", "21:00"};
     AppConfig d = configDefaults();
     expect(!configParseFeedTimes(t, 4, d, err, sizeof(err)), "4 mốc (D6 chỉ cho 3): từ chối"); }
   { const char* t[] = {"08:00", "9:30"};
     AppConfig d = configDefaults();
-    expect(!configParseFeedTimes(t, 2, d, err, sizeof(err)) && d.feed_count == 0, "Một mốc sai dạng: từ chối cả danh sách"); }
+    expect(!configParseFeedTimes(t, 2, d, err, sizeof(err)) && d.feed_count == DEF_FEED_COUNT, "Một mốc sai dạng: từ chối cả danh sách"); }
 
   printf("\n=== feeder: tiện ích ===\n");
   expect(feedClampPortions(0) == 1 && feedClampPortions(-3) == 1, "Số phần 0 hoặc âm: kẹp về 1");
@@ -162,6 +164,15 @@ int main() {
     p.commit(at(8, 0, 10));
     expect(p.scheduleDue(slots, 2, at(8, 2)) == -1, "Đã cho ăn từ 08:00: không lặp trong cùng cửa sổ (kể cả sau khởi động lại)");
     expect(p.scheduleDue(slots, 2, at(18, 1)) == 1, "Mốc 18:00 vẫn chạy bình thường");
+  }
+  {
+    AppConfig dc = configDefaults();                 // lịch mặc định 08:00, 14:00, 18:00
+    FeedPolicy p;
+    expect(p.scheduleDue(dc.feed_min, dc.feed_count, at(8, 0, 0)) == 0, "Lịch mặc định: 08:00 là mốc 0");
+    expect(p.scheduleDue(dc.feed_min, dc.feed_count, at(13, 59, 59)) == -1, "Lịch mặc định: 13:59:59 chưa tới mốc 14:00");
+    expect(p.scheduleDue(dc.feed_min, dc.feed_count, at(14, 0, 0)) == 1, "Lịch mặc định: 14:00 là mốc 1");
+    expect(p.scheduleDue(dc.feed_min, dc.feed_count, at(18, 4, 59)) == 2, "Lịch mặc định: 18:04:59 vẫn trong cửa sổ mốc 2");
+    expect(p.scheduleDue(dc.feed_min, dc.feed_count, at(18, 5, 0)) == -1, "Lịch mặc định: 18:05:00 hết cửa sổ");
   }
   {
     uint16_t slots[1] = {480};

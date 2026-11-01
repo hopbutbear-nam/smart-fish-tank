@@ -53,7 +53,7 @@ DEFAULT_CONFIG = {
     "level_min_pct": 30.0, "level_danger_pct": 15.0,
     "buzzer_on": True, "mute_min": 30,
     "feed_ms": 600,
-    "feed_times": [],
+    "feed_times": ["08:00", "14:00", "18:00"],   # mặc định như firmware (nhóm chốt, xem documentation/fix-plan.md)
 }
 
 # ----------------------------------------------------------------------------

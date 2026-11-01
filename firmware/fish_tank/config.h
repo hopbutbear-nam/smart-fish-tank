@@ -135,6 +135,10 @@
 #define FEED_WINDOW_S           86400UL
 #define FEED_MAX_TIMES          3          // D6: tối đa 3 mốc trong lịch (chừa 1 lần cho "Cho ăn ngay")
 #define FEED_SCHEDULE_GRACE_S   300UL      // D6: mỗi mốc chạy trong cửa sổ khoảng 5 phút sau giờ đặt
+#define DEF_FEED_COUNT          3          // lịch mặc định khi chưa có config (nhóm chốt, xem documentation/fix-plan.md): 08:00, 14:00, 18:00
+#define DEF_FEED_MIN_0          (8 * 60)
+#define DEF_FEED_MIN_1          (14 * 60)
+#define DEF_FEED_MIN_2          (18 * 60)
 
 // ---------------------------------------------------------------------------
 // Còi (E6, D9)

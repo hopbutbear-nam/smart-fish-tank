@@ -31,7 +31,7 @@ const L2_ADD = { temp: 2, turb: 15 };                                  // mức 
 const DEFAULT_CFG = {
     temp_min: 23, temp_max: 29, ph_min: 6.0, ph_max: 8.0,
     turb_max_pct: 30, level_min_pct: 30, level_danger_pct: 15,
-    mute_min: 30, feed_ms: 600, buzzer_on: true, feed_times: ["08:00", "18:00"],
+    mute_min: 30, feed_ms: 600, buzzer_on: true, feed_times: ["08:00", "14:00", "18:00"],
 };
 
 const $ = (id) => document.getElementById(id);
