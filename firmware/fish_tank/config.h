@@ -79,9 +79,9 @@
 // Chống nhấp nháy (D3, ĐỀ XUẤT phương án A)
 // ---------------------------------------------------------------------------
 #define RISK_RAISE_READS        3        // nâng mức khi điều kiện đúng 3 lần đánh giá liên tiếp
-#define HYST_TEMP               0.2f     // hạ mức khi quay lại trong ngưỡng một khoảng nhỏ
-#define HYST_PH                 0.1f
-#define HYST_PCT                2.0f
+#define HYST_TEMP               0.5f     // hạ mức khi quay lại sâu trong ngưỡng: 0,5 °C (nhóm chốt, xem documentation/fix-plan.md)
+#define HYST_PH                 0.3f     // 0,3 pH
+#define HYST_PCT                5.0f     // 5 điểm % (độ đục, mực nước)
 
 // ---------------------------------------------------------------------------
 // Đọc cảm biến
@@ -115,6 +115,8 @@
 #define LEVEL_RAW_DRY           0          // giá trị ADC khi khô
 #define LEVEL_RAW_FULL          2500       // giá trị ADC khi ngập tới mức đầy
 #define LEVEL_PWR_SETTLE_MS     20         // chờ sau khi bật GPIO27 rồi mới đọc
+#define LEVEL_RAW_SHORT         4090       // GIÁ TRỊ TẠM: trung bình thô từ mức này trở lên = chập hoặc kẹt trần ADC -> lỗi cảm biến mực nước (phải lớn hơn LEVEL_RAW_FULL)
+#define LEVEL_SPREAD_MAX        300        // GIÁ TRỊ TẠM: chênh giữa mẫu lớn nhất và nhỏ nhất trong một vòng đo vượt mức này = đọc không ổn định -> lỗi
 
 // ---------------------------------------------------------------------------
 // Servo cho ăn (E6)

@@ -164,9 +164,9 @@ bool netPublishTelemetry(const SensorValues& s, const RiskResult& r) {
   char temp[16], ph[16], turbV[16], turb[16], level[16], flags[96], tsPart[24];
   fmtNum(temp, sizeof(temp), s.temp_ok, s.temp_c, 1);
   fmtNum(ph, sizeof(ph), s.ph_ok, s.ph, 2);
-  fmtNum(turbV, sizeof(turbV), true, s.turb_v, 2);
-  fmtNum(turb, sizeof(turb), true, s.turb_pct, 0);       // số nguyên như fake_esp32.py
-  fmtNum(level, sizeof(level), true, s.level_pct, 0);
+  fmtNum(turbV, sizeof(turbV), s.turb_ok, s.turb_v, 2);   // cảm biến lỗi thì null
+  fmtNum(turb, sizeof(turb), s.turb_ok, s.turb_pct, 0);   // số nguyên như fake_esp32.py
+  fmtNum(level, sizeof(level), s.level_ok, s.level_pct, 0);
   flagsJson(r.levels, flags, sizeof(flags));
   uint32_t ts = netEpoch();
   if (ts) snprintf(tsPart, sizeof(tsPart), "\"ts\":%lu,", (unsigned long)ts);

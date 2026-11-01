@@ -99,6 +99,20 @@ int main() {
   expect(!sensorsAdcVoltOk(5.3f), "Điện áp 5,3 V: lỗi");
   expect(!sensorsAdcVoltOk(0.0f / 0.0f), "Điện áp NaN: lỗi");
 
+  { float ok8[8] = {1250, 1252, 1249, 1251, 1250, 1248, 1253, 1250};
+    expect(sensorsLevelOk(ok8, 8), "Mực nước: 8 mẫu ổn định (1250 ± 3): hợp lệ");
+    float dry8[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    expect(sensorsLevelOk(dry8, 8), "Mực nước: khô (0): vẫn hợp lệ, báo level_low chứ không phải lỗi cảm biến");
+    float sat8[8] = {4095, 4095, 4095, 4095, 4095, 4095, 4095, 4095};
+    expect(!sensorsLevelOk(sat8, 8), "Mực nước: kẹt trần 4095: lỗi");
+    float jump8[8] = {1250, 1250, 1250, 1250, 1250, 1250, 1250, 1650};
+    expect(!sensorsLevelOk(jump8, 8), "Mực nước: một vòng đo nhảy hơn LEVEL_SPREAD_MAX: lỗi");
+    float edge8[8] = {1250, 1250, 1250, 1250, 1250, 1250, 1250, 1550};
+    expect(sensorsLevelOk(edge8, 8), "Mực nước: chênh đúng 300: chưa vượt, hợp lệ");
+    float nan8[2] = {1250.0f, 0.0f / 0.0f};
+    expect(!sensorsLevelOk(nan8, 2), "Mực nước: có mẫu NaN: lỗi");
+    expect(!sensorsLevelOk(ok8, 0), "Mực nước: không có mẫu nào: lỗi"); }
+
   { SensorCal c = testCal();
     expect(near(sensorsPhFromVolt(2.5f, c), 6.86f, 0.001f), "pH tại V686 = 6,86");
     expect(near(sensorsPhFromVolt(3.0f, c), 4.01f, 0.001f), "pH tại V401 = 4,01");
@@ -129,8 +143,8 @@ int main() {
     expect(firstReady <= 1000, "Có đủ số liệu đầu tiên trong vòng 1 giây");
     expect(v.temp_ok && near(v.temp_c, 26.5f, 0.01f), "Nhiệt độ đọc được 26,5 °C");
     expect(v.ph_ok && near(v.ph, 6.86f, 0.01f) && near(v.ph_v, 2.5f, 0.001f), "pH 6,86 (2,50 V)");
-    expect(near(v.turb_v, 3.25f, 0.001f) && near(v.turb_pct, 50.0f, 0.01f), "Độ đục 50 % (3,25 V)");
-    expect(v.level_raw == 1250 && near(v.level_pct, 50.0f, 0.01f), "Mực nước 50 % (thô 1250)");
+    expect(v.turb_ok && near(v.turb_v, 3.25f, 0.001f) && near(v.turb_pct, 50.0f, 0.01f), "Độ đục 50 % (3,25 V), turb_ok = true");
+    expect(v.level_ok && v.level_raw == 1250 && near(v.level_pct, 50.0f, 0.01f), "Mực nước 50 % (thô 1250), level_ok = true");
     expect(hal.tempRequests >= 6 && hal.tempRequests <= 7, "Nhiệt độ: khoảng 2 giây một lần (6 đến 7 lần trong 12 giây)");
     expect(hal.phReads == 3 * ADC_SAMPLES && hal.turbReads == 3 * ADC_SAMPLES, "pH và độ đục: 3 vòng x 32 mẫu (5 giây một vòng)");
     expect(hal.levelReads == 3 * LEVEL_SAMPLES && hal.powerOns == 3, "Mực nước: 3 vòng, mỗi vòng bật nguồn một lần");
@@ -162,6 +176,18 @@ int main() {
     SensorHub hub(hal, testCal());
     runHub(hal, hub, 0, 1500);
     expect(!hub.values().temp_ok, "DS18B20 đọc đúng 85,0: coi là lỗi (D4)");
+  }
+  {
+    FakeHal hal; hal.turbMv = 0.0f; hal.levelRawVal = 4095;      // độ đục 0 V, mực nước kẹt trần
+    SensorHub hub(hal, testCal());
+    runHub(hal, hub, 0, 1500);
+    const SensorValues& v = hub.values();
+    expect(!v.turb_ok, "Độ đục 0 V (dây đứt hoặc chập): turb_ok = false");
+    expect(!v.level_ok, "Mực nước kẹt trần 4095: level_ok = false");
+    RiskInput ri = sensorsToRiskInput(v);
+    RiskResult rr = riskEvaluate(ri, riskDefaultThresholds());
+    char flags[96]; riskFlagsCsv(rr.levels, flags, sizeof(flags));
+    expect(rr.risk == 1 && strcmp(flags, "sensor_turb,sensor_level") == 0, "Độ đục và mực nước lỗi: 2 cờ mức 1 (chưa đủ 3 cờ) nên risk 1");
   }
   {
     FakeHal hal; SensorHub hub(hal, testCal());

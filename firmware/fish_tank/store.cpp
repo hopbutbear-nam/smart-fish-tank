@@ -29,6 +29,10 @@ RiskThresholds configThresholds(const AppConfig& c) {
   t.turb_max_pct = c.turb_max_pct;
   t.level_min_pct = c.level_min_pct;
   t.level_danger_pct = c.level_danger_pct;
+  t.temp_danger_min = TEMP_DANGER_MIN;
+  t.temp_danger_max = TEMP_DANGER_MAX;
+  t.ph_danger_min = PH_DANGER_MIN;
+  t.ph_danger_max = PH_DANGER_MAX;
   return t;
 }
 

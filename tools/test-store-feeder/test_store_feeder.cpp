@@ -44,6 +44,9 @@ int main() {
   printf("=== store: kiểm tra cấu hình ===\n");
   AppConfig c = configDefaults();
   expect(configValidate(c, err, sizeof(err)), "Cấu hình mặc định hợp lệ");
+  { RiskThresholds th = configThresholds(c);
+    expect(th.temp_danger_min == 18.0f && th.temp_danger_max == 33.0f && th.ph_danger_min == 5.0f && th.ph_danger_max == 8.5f,
+           "configThresholds: có đủ 4 biên nguy hiểm"); }
 
   c = configDefaults(); c.temp_min = 18.0f; c.temp_max = 33.0f;
   expect(configValidate(c, err, sizeof(err)), "Đúng biên nhiệt độ 18 và 33: hợp lệ");

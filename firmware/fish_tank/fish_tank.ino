@@ -29,7 +29,7 @@ static uint32_t g_nextTelemMs = 0;
 static uint32_t g_nextSchedMs = 0;
 static uint32_t g_nextLogMs = 0;
 static uint8_t  g_prevRisk = 0;
-static uint8_t  g_prevFlags = 0;          // mặt nạ bit các cờ đang có (để gửi telemetry ngay khi cờ đổi)
+static uint16_t g_prevFlags = 0;         // mặt nạ bit các cờ đang có (để gửi telemetry ngay khi cờ đổi); 16 bit vì FL_COUNT = 10
 static uint32_t g_lastSchedRejectEpoch = 0;
 
 static bool due(uint32_t now, uint32_t target) {
@@ -176,8 +176,8 @@ void loop() {
   if (g_sensors.ready() && due(now, g_nextRiskMs)) {
     g_nextRiskMs = now + RISK_PERIOD_MS;
     g_risk = g_filter.update(sensorsToRiskInput(g_sensors.values()), configThresholds(g_cfg));
-    uint8_t flagMask = 0;
-    for (uint8_t i = 0; i < FL_COUNT; i++) if (g_risk.levels.lv[i]) flagMask |= (uint8_t)(1u << i);
+    uint16_t flagMask = 0;
+    for (uint8_t i = 0; i < FL_COUNT; i++) if (g_risk.levels.lv[i]) flagMask |= (uint16_t)(1u << i);
     if (g_risk.risk != g_prevRisk || flagMask != g_prevFlags) {
       Serial.printf("[risk] %u -> %u\n", (unsigned)g_prevRisk, (unsigned)g_risk.risk);
       if (g_risk.risk > g_prevRisk) netPublishAlarm(g_risk);   // event "alarm" khi risk TĂNG (như fake_esp32.py)

@@ -19,6 +19,8 @@ enum RiskFlag : uint8_t {
   FL_LEVEL_LOW,
   FL_SENSOR_TEMP,
   FL_SENSOR_PH,
+  FL_SENSOR_TURB,        // lỗi cảm biến độ đục (mức 1)
+  FL_SENSOR_LEVEL,       // lỗi cảm biến mực nước (mức 1)
   FL_COUNT
 };
 
@@ -28,6 +30,8 @@ struct RiskThresholds {      // lấy từ config (NVS); mức 2 đi theo ngư�
   float turb_max_pct;
   float level_min_pct;
   float level_danger_pct;
+  float temp_danger_min, temp_danger_max;   // biên nguy hiểm (mức 3 nhiệt độ); riskTighten() thu hẹp để hạ mức có khoảng đệm
+  float ph_danger_min, ph_danger_max;       // biên nguy hiểm (mức 2 pH)
 };
 
 struct RiskInput {           // số liệu đã lọc và hiệu chuẩn
@@ -35,7 +39,9 @@ struct RiskInput {           // số liệu đã lọc và hiệu chuẩn
   float temp_c;
   bool  ph_ok;               // false nếu cảm biến pH lỗi (ADC ngoài dải)
   float ph;
-  float turb_pct;            // lỗi cảm biến độ đục và mực nước: chưa quy định (CẦN XÁC NHẬN)
+  bool  turb_ok;             // false nếu cảm biến độ đục lỗi (điện áp ngoài dải)
+  float turb_pct;
+  bool  level_ok;            // false nếu cảm biến mực nước lỗi (chập, kẹt trần, đọc không ổn định)
   float level_pct;
 };
 

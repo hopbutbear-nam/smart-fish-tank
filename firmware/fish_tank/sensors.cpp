@@ -40,6 +40,19 @@ bool sensorsAdcVoltOk(float v) {
   return v >= ADC_V_MIN_VALID && v <= ADC_V_MAX_VALID;       // NaN cũng cho kết quả false
 }
 
+bool sensorsLevelOk(const float* raw, uint8_t n) {
+  if (n == 0) return false;
+  float sum = 0.0f, lo = raw[0], hi = raw[0];
+  for (uint8_t i = 0; i < n; i++) {
+    if (!(raw[i] == raw[i])) return false;                   // NaN
+    sum += raw[i];
+    if (raw[i] < lo) lo = raw[i];
+    if (raw[i] > hi) hi = raw[i];
+  }
+  if (sum / n >= (float)LEVEL_RAW_SHORT) return false;       // chập hoặc kẹt trần ADC
+  return (hi - lo) <= (float)LEVEL_SPREAD_MAX;               // đọc nhảy quá mạnh trong một vòng đo = không tin được
+}
+
 float sensorsPhFromVolt(float v, const SensorCal& cal) {
   float dv = cal.ph_v686 - cal.ph_v401;
   if (fabsf(dv) < 0.01f) return NAN;                         // hai điểm hiệu chuẩn trùng nhau: không tính được
@@ -69,8 +82,10 @@ RiskInput sensorsToRiskInput(const SensorValues& s) {
   r.temp_c = s.temp_ok ? s.temp_c : 0.0f;
   r.ph_ok = s.ph_ok;
   r.ph = s.ph_ok ? s.ph : 0.0f;
-  r.turb_pct = s.turb_pct;
-  r.level_pct = s.level_pct;
+  r.turb_ok = s.turb_ok;
+  r.turb_pct = s.turb_ok ? s.turb_pct : 0.0f;
+  r.level_ok = s.level_ok;
+  r.level_pct = s.level_ok ? s.level_pct : 100.0f;
   return r;
 }
 
@@ -172,10 +187,12 @@ void SensorHub::finishChannel(uint32_t now) {
   } else if (chan_ == CH_TURB) {
     float v = mean / 1000.0f * ADC_DIVIDER;
     v_.turb_v = v;
+    v_.turb_ok = sensorsAdcVoltOk(v);
     v_.turb_pct = sensorsTurbPct(v, cal_);
     startChannel(CH_LEVEL, now);
   } else {
     hal_.levelPower(false);
+    v_.level_ok = sensorsLevelOk(buf_, nSamp_);
     v_.level_raw = (int)(mean + 0.5f);
     v_.level_pct = sensorsLevelPct(mean, cal_);
     v_.slow_ready = true;

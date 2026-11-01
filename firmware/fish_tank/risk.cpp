@@ -6,7 +6,8 @@
 
 static const char* const FLAG_NAMES[FL_COUNT] = {
   "temp_high", "temp_low", "ph_high", "ph_low",
-  "turb_high", "level_low", "sensor_temp", "sensor_ph"
+  "turb_high", "level_low", "sensor_temp", "sensor_ph",
+  "sensor_turb", "sensor_level"
 };
 
 const char* riskFlagName(uint8_t flag) {
@@ -22,19 +23,38 @@ RiskThresholds riskDefaultThresholds() {
   t.turb_max_pct = DEF_TURB_MAX_PCT;
   t.level_min_pct = DEF_LEVEL_MIN_PCT;
   t.level_danger_pct = DEF_LEVEL_DANGER_PCT;
+  t.temp_danger_min = TEMP_DANGER_MIN;
+  t.temp_danger_max = TEMP_DANGER_MAX;
+  t.ph_danger_min = PH_DANGER_MIN;
+  t.ph_danger_max = PH_DANGER_MAX;
   return t;
 }
 
+// Khoảng đệm không được vượt một phần tư độ rộng vùng an toàn, để ngưỡng thu hẹp không bao giờ chồng lên nhau.
+static float hystMargin(float want, float span) {
+  float cap = span * 0.25f;
+  return want < cap ? want : cap;
+}
+
 // Ngưỡng "chặt hơn" một khoảng nhỏ: giá trị phải nằm sâu trong vùng an toàn thì mới được hạ mức.
+// Khoảng đệm theo quyết định của nhóm (documentation/fix-plan.md): 0,5 °C, 0,3 pH, 5 điểm %; áp dụng cả cho biên nguy hiểm (#9, hướng A).
 RiskThresholds riskTighten(const RiskThresholds& th) {
   RiskThresholds t = th;
-  t.temp_min += HYST_TEMP;
-  t.temp_max -= HYST_TEMP;
-  t.ph_min += HYST_PH;
-  t.ph_max -= HYST_PH;
-  t.turb_max_pct -= HYST_PCT;
+  float ht = hystMargin(HYST_TEMP, th.temp_max - th.temp_min);
+  float hp = hystMargin(HYST_PH, th.ph_max - th.ph_min);
+  t.temp_min += ht;
+  t.temp_max -= ht;
+  t.ph_min += hp;
+  t.ph_max -= hp;
+  t.temp_danger_min += HYST_TEMP;
+  t.temp_danger_max -= HYST_TEMP;
+  t.ph_danger_min += HYST_PH;
+  t.ph_danger_max -= HYST_PH;
+  t.turb_max_pct -= hystMargin(HYST_PCT, th.turb_max_pct * 2.0f);   // ngưỡng nhỏ thì đệm nhỏ lại (tối đa một nửa ngưỡng)
   t.level_min_pct += HYST_PCT;
+  if (t.level_min_pct > 100.0f) t.level_min_pct = 100.0f;
   t.level_danger_pct += HYST_PCT;
+  if (t.level_danger_pct > t.level_min_pct) t.level_danger_pct = t.level_min_pct;
   return t;
 }
 
@@ -48,7 +68,7 @@ void riskComputeLevels(const RiskInput& in, const RiskThresholds& th, RiskLevels
   } else {
     float t = in.temp_c;
     uint8_t lv = 0;
-    if (t < TEMP_DANGER_MIN || t > TEMP_DANGER_MAX) lv = 3;
+    if (t < th.temp_danger_min || t > th.temp_danger_max) lv = 3;
     else if (t < th.temp_min - TEMP_L2_EXTRA || t > th.temp_max + TEMP_L2_EXTRA) lv = 2;
     else if (t < th.temp_min || t > th.temp_max) lv = 1;
     if (lv) out.lv[t < th.temp_min ? FL_TEMP_LOW : FL_TEMP_HIGH] = lv;
@@ -60,18 +80,28 @@ void riskComputeLevels(const RiskInput& in, const RiskThresholds& th, RiskLevels
   } else {
     float p = in.ph;
     uint8_t lv = 0;
-    if (p < PH_DANGER_MIN || p > PH_DANGER_MAX) lv = 2;
+    if (p < th.ph_danger_min || p > th.ph_danger_max) lv = 2;
     else if (p < th.ph_min || p > th.ph_max) lv = 1;
     if (lv) out.lv[p < th.ph_min ? FL_PH_LOW : FL_PH_HIGH] = lv;
   }
 
-  // Độ đục: mức 1 trên ngưỡng; mức 2 trên ngưỡng + 15 điểm %
-  if (in.turb_pct > th.turb_max_pct + TURB_L2_EXTRA) out.lv[FL_TURB_HIGH] = 2;
-  else if (in.turb_pct > th.turb_max_pct) out.lv[FL_TURB_HIGH] = 1;
+  // Độ đục: mức 1 trên ngưỡng; mức 2 trên ngưỡng + 15 điểm %; cảm biến lỗi = mức 1 (nhóm chốt, xem documentation/fix-plan.md)
+  if (!in.turb_ok) {
+    out.lv[FL_SENSOR_TURB] = SENSOR_FAULT_LEVEL;
+  } else if (in.turb_pct > th.turb_max_pct + TURB_L2_EXTRA) {
+    out.lv[FL_TURB_HIGH] = 2;
+  } else if (in.turb_pct > th.turb_max_pct) {
+    out.lv[FL_TURB_HIGH] = 1;
+  }
 
-  // Mực nước: mức 2 dưới level_danger; mức 1 dưới level_min
-  if (in.level_pct < th.level_danger_pct) out.lv[FL_LEVEL_LOW] = 2;
-  else if (in.level_pct < th.level_min_pct) out.lv[FL_LEVEL_LOW] = 1;
+  // Mực nước: mức 2 dưới level_danger; mức 1 dưới level_min; cảm biến lỗi = mức 1
+  if (!in.level_ok) {
+    out.lv[FL_SENSOR_LEVEL] = SENSOR_FAULT_LEVEL;
+  } else if (in.level_pct < th.level_danger_pct) {
+    out.lv[FL_LEVEL_LOW] = 2;
+  } else if (in.level_pct < th.level_min_pct) {
+    out.lv[FL_LEVEL_LOW] = 1;
+  }
 }
 
 // Luật tổng hợp: lấy mức riêng cao nhất; từ 3 cờ (mức >= 1) thì ít nhất mức 2;

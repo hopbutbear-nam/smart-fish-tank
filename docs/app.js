@@ -41,6 +41,7 @@ const FLAG_TEXT = {
     ph_low: "pH thấp", ph_high: "pH cao",
     turb_high: "nước đục", level_low: "mực nước thấp",
     sensor_temp: "lỗi cảm biến nhiệt độ", sensor_ph: "lỗi cảm biến pH",
+    sensor_turb: "lỗi cảm biến độ đục", sensor_level: "lỗi cảm biến mực nước",
 };
 const REASON_TEXT = {
     too_soon: "quá sớm (phải chờ ít nhất 60 giây giữa hai lần)",
@@ -272,12 +273,12 @@ const METRICS = [
         word: (v, c, f) => (f && f.includes("ph_low")) ? "pH thấp (nước chua)" : (f && f.includes("ph_high")) ? "pH cao (nước kiềm)" : (v < c.ph_min ? "pH thấp (nước chua)" : "pH cao (nước kiềm)"),
     },
     {
-        key: "turb", get: d => d.turb_pct, digits: 0, unit: " %", flags: ["turb_high"], sensor: null,
+        key: "turb", get: d => d.turb_pct, digits: 0, unit: " %", flags: ["turb_high"], sensor: "sensor_turb",
         sev: sevTurb, tone: toneTurb,
         word: () => "Nước đục",
     },
     {
-        key: "level", get: d => d.level_pct, digits: 0, unit: " %", flags: ["level_low"], sensor: null,
+        key: "level", get: d => d.level_pct, digits: 0, unit: " %", flags: ["level_low"], sensor: "sensor_level",
         sev: sevLevel, tone: toneLevel,
         word: (v, c, f, lv) => lv >= 2 ? "Mực nước rất thấp" : "Mực nước thấp",
     },

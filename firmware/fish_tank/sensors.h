@@ -25,8 +25,8 @@ SensorCal sensorsDefaultCal();   // lấy từ config.h
 struct SensorValues {
   bool  temp_ok;   float temp_c;                 // temp_c = NAN khi lỗi
   bool  ph_ok;     float ph;   float ph_v;       // ph = NAN khi lỗi; ph_v là điện áp module (V)
-  float turb_v;    float turb_pct;               // điện áp module (V) và độ đục tương đối 0 đến 100 %
-  int   level_raw; float level_pct;              // giá trị ADC thô và mực nước 0 đến 100 %
+  bool  turb_ok;   float turb_v;    float turb_pct;  // turb_ok = false nếu điện áp ngoài dải; turb_v (V), độ đục tương đối 0 đến 100 %
+  bool  level_ok;  int   level_raw; float level_pct; // level_ok = false nếu chập, kẹt trần hoặc đọc không ổn định; giá trị ADC thô và mực nước 0 đến 100 %
   bool  temp_ready;                              // đã có ít nhất một kết quả nhiệt độ
   bool  slow_ready;                              // đã có ít nhất một vòng pH, độ đục, mực nước
 };
@@ -35,6 +35,7 @@ struct SensorValues {
 float sensorsTrimmedMean(const float* v, uint8_t n);       // bỏ mẫu nhỏ nhất và lớn nhất rồi lấy trung bình
 bool  sensorsTempValid(float c);                           // false nếu -127 (mất cảm biến), 85,0 (mặc định khi bật nguồn), NaN, ngoài dải
 bool  sensorsAdcVoltOk(float v);                           // điện áp module trong dải hợp lệ (dây đứt hoặc chập thì sai)
+bool  sensorsLevelOk(const float* raw, uint8_t n);         // false nếu không có mẫu, trung bình >= LEVEL_RAW_SHORT, hoặc (lớn nhất - nhỏ nhất) > LEVEL_SPREAD_MAX
 float sensorsPhFromVolt(float v, const SensorCal& cal);    // pH = 6,86 + (V - V686) x (6,86 - 4,01) / (V686 - V401); NAN nếu hiệu chuẩn hỏng
 float sensorsTurbPct(float v, const SensorCal& cal);       // 0 đến 100
 float sensorsLevelPct(float raw, const SensorCal& cal);    // 0 đến 100

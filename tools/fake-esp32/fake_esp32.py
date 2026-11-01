@@ -75,7 +75,7 @@ TURB_L2_EXTRA = 15.0    # 30 % -> 45 %
 # Mỗi cờ pH vẫn được tính vào luật tổng hợp nhiều cờ (hàm aggregate).
 TEMP_DANGER = (18.0, 33.0)
 PH_DANGER = (5.0, 8.5)
-SENSOR_FAULT_LEVEL = 1  # cảm biến lỗi (temp_c / ph = null) -> mức 1
+SENSOR_FAULT_LEVEL = 1  # cảm biến lỗi (temp_c / ph / turb_pct / level_pct = null) -> mức 1
 
 # Luật cho ăn
 MAX_PORTIONS = 2        # số phần tối đa mỗi lệnh (kẹp xuống nếu lớn hơn)
@@ -157,13 +157,17 @@ def evaluate(r, cfg):
             levels["ph_low" if p < lo else "ph_high"] = lv
 
     tb = r["turb_pct"]
-    if tb > cfg["turb_max_pct"] + TURB_L2_EXTRA:
+    if tb is None:
+        levels["sensor_turb"] = SENSOR_FAULT_LEVEL
+    elif tb > cfg["turb_max_pct"] + TURB_L2_EXTRA:
         levels["turb_high"] = 2
     elif tb > cfg["turb_max_pct"]:
         levels["turb_high"] = 1
 
     lvl = r["level_pct"]
-    if lvl < cfg["level_danger_pct"]:
+    if lvl is None:
+        levels["sensor_level"] = SENSOR_FAULT_LEVEL
+    elif lvl < cfg["level_danger_pct"]:
         levels["level_low"] = 2
     elif lvl < cfg["level_min_pct"]:
         levels["level_low"] = 1
@@ -236,7 +240,7 @@ class FakeEsp32:
     demo3b               2 cờ mức 2                     -> risk 3
   set <temp|ph|turb|level> <số>   đặt giá trị tuỳ ý
                          ví dụ: set temp 32 (mức 2), set temp 35 (mức 3), set ph 8.7 (mức 2)
-  fail <temp|ph>         giả lỗi cảm biến (giá trị null + cờ sensor_*, mức 1)
+  fail <temp|ph|turb|level>  giả lỗi cảm biến (giá trị null + cờ sensor_*, mức 1)
   fix                    sửa mọi lỗi cảm biến
   boot                   gửi lại sự kiện boot
   crash                  thoát đột ngột (không DISCONNECT) -> broker gửi Last Will "offline"
@@ -334,10 +338,12 @@ class FakeEsp32:
         ph = None if "ph" in self.fail else round(b["ph"] + random.gauss(0, 0.02), 2)
         turb = clamp(b["turb"] + random.gauss(0, 0.4), 0, 100)
         level = clamp(b["level"] + random.gauss(0, 0.4), 0, 100)
+        turb_bad, level_bad = "turb" in self.fail, "level" in self.fail
         return {
             "temp_c": temp, "ph": ph,
-            "turb_v": round(V_CLEAR - (V_CLEAR - V_DIRTY) * turb / 100.0, 2),
-            "turb_pct": int(round(turb)), "level_pct": int(round(level)),
+            "turb_v": None if turb_bad else round(V_CLEAR - (V_CLEAR - V_DIRTY) * turb / 100.0, 2),
+            "turb_pct": None if turb_bad else int(round(turb)),
+            "level_pct": None if level_bad else int(round(level)),
         }
 
     def publish_telemetry(self):
@@ -439,7 +445,7 @@ class FakeEsp32:
                 log(f"OK: {p[1]} = {p[2]}")
             except ValueError:
                 log("Giá trị phải là số. Ví dụ: set temp 35")
-        elif c == "fail" and len(p) == 2 and p[1] in ("temp", "ph"):
+        elif c == "fail" and len(p) == 2 and p[1] in ("temp", "ph", "turb", "level"):
             self.fail.add(p[1])
             self.force_publish = True
             log(f"OK: giả lỗi cảm biến {p[1]}")
