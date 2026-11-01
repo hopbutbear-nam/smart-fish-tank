@@ -108,7 +108,7 @@
 // !!! GIÁ TRỊ TẠM, CHƯA ĐO: Giai đoạn 2 chưa làm. Đo xong phải thay đủ các dòng dưới đây
 // !!! rồi đặt CALIBRATION_DONE = 1. Số pH, độ đục, mực nước trước đó CHỈ để thử luồng dữ liệu.
 // ---------------------------------------------------------------------------
-#define CALIBRATION_DONE        0
+#define CALIBRATION_DONE        1
 #define PH_V686                 2.56f      // V của module pH trong dung dịch 6,86 (V)
 #define PH_V401                 3.14f      // V của module pH trong dung dịch 4,01 (V)
 #define TURB_V_CLEAR            3.764f      // V của module độ đục trong nước sạch (V)
@@ -145,11 +145,11 @@
 // Còi (E6, D9)
 // ---------------------------------------------------------------------------
 #define BUZZ_FREQ_HZ            1300
-#define BUZZ_DUTY_QUIET_PCT     15         // tiếng nhỏ (mức 1, 2): chọn bằng tai ở T2.7 (khoảng 10 đến 20)
+#define BUZZ_DUTY_QUIET_PCT     50        // tiếng to (mức 1, 2): chọn bằng tai ở T2.7 (khoảng 10 đến 20)
 #define BUZZ_DUTY_LOUD_PCT      50         // tiếng to nhất (mức 3)
 #define BUZZ_BEEP_MS            200
-#define BUZZ_L1_PERIOD_MS       60000UL    // mức 1: 1 tiếng ngắn mỗi 60 giây
-#define BUZZ_L2_PERIOD_MS       30000UL    // mức 2: 2 tiếng mỗi 30 giây (cách nhau BUZZ_BEEP_MS)
+#define BUZZ_L1_PERIOD_MS       30000UL    // mức 1: 1 tiếng ngắn mỗi 30 giây
+#define BUZZ_L2_PERIOD_MS       15000UL    // mức 2: 2 tiếng mỗi 15 giây (cách nhau BUZZ_BEEP_MS)
 #define BUZZ_L3_PERIOD_MS       5000UL     // mức 3: 3 tiếng to nhất liền nhau mỗi 5 giây (mỗi tiếng BUZZ_BEEP_MS, cách nhau BUZZ_BEEP_MS)
 #define BUZZ_LEDC_CHANNEL       4          // chỉ dùng cho core 2.x (core 3.x tự cấp kênh); tránh kênh 0 của servo
 #define BUZZ_LEDC_BITS          8          // độ phân giải PWM
