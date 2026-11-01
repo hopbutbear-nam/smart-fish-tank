@@ -233,10 +233,14 @@ void loop() {
   // 5a) Cấu hình mới từ web (đã gộp và đã validate trong net)
   AppConfig newCfg;
   if (netTakeConfig(newCfg)) {
-    g_cfg = newCfg;
-    if (!storeSaveConfig(g_cfg)) Serial.println("[store] LOI: khong luu duoc cau hinh vao NVS");
-    g_alarm.configure(g_cfg.buzzer_on, g_cfg.mute_min);
-    Serial.println("[config] da ap dung cau hinh moi");
+    if (configEqual(g_cfg, newCfg)) {
+      Serial.println("[config] giong cau hinh dang dung, bo qua (khong ghi NVS)");   // config retained gui lai moi lan noi lai
+    } else {
+      g_cfg = newCfg;
+      if (!storeSaveConfig(g_cfg)) Serial.println("[store] LOI: khong luu duoc cau hinh vao NVS");
+      g_alarm.configure(g_cfg.buzzer_on, g_cfg.mute_min);
+      Serial.println("[config] da ap dung cau hinh moi");
+    }
   }
 
   // 5b) Lệnh cho ăn từ web
@@ -259,8 +263,11 @@ void loop() {
     logStatus();
   }
 
-  // 8) Mất MQTT quá REBOOT_IF_NO_MQTT_MS thì tự khởi động lại (không làm khi servo đang quay)
-  if (!g_runner.busy() && netMqttDownMs(now) >= REBOOT_IF_NO_MQTT_MS) {
+  // 8) Mất MQTT quá lâu thì tự khởi động lại (không làm khi servo đang quay, không làm khi đang có cảnh báo).
+  //    WiFi còn mà MQTT hỏng: sau REBOOT_IF_NO_MQTT_MS (10 phút). Mất cả WiFi: sau REBOOT_IF_NO_WIFI_MS (30 phút),
+  //    vì khởi động lại không sửa được WiFi nhà mà còn làm mất bộ lọc risk và ngắt còi.
+  uint32_t rebootAfterMs = netWifiUp() ? REBOOT_IF_NO_MQTT_MS : REBOOT_IF_NO_WIFI_MS;
+  if (!g_runner.busy() && g_risk.risk == 0 && netMqttDownMs(now) >= rebootAfterMs) {
     Serial.println("[wdt] mat MQTT qua lau, khoi dong lai");
     g_runner.reset();
     feederApply(g_runner);               // chắc chắn servo dừng

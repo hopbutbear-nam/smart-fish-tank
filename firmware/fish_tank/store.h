@@ -24,6 +24,9 @@ struct AppConfig {
 AppConfig      configDefaults();
 RiskThresholds configThresholds(const AppConfig& c);
 
+// So sánh từng trường (không dùng memcmp vì struct có khoảng đệm). feed_min chỉ so sánh feed_count phần tử đầu.
+bool configEqual(const AppConfig& a, const AppConfig& b);
+
 // Kiểm tra TOÀN BỘ cấu hình (đã gộp giá trị mới vào giá trị cũ). Sai bất kỳ điều nào thì trả false và
 // ghi lý do vào err; khi đó phải TỪ CHỐI cả bản tin config (giống validate_config của fake_esp32.py).
 bool configValidate(const AppConfig& c, char* err, size_t errLen);

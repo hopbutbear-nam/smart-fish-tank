@@ -44,6 +44,18 @@ int main() {
   printf("=== store: kiểm tra cấu hình ===\n");
   AppConfig c = configDefaults();
   expect(configValidate(c, err, sizeof(err)), "Cấu hình mặc định hợp lệ");
+  { AppConfig a = configDefaults(), b = configDefaults();
+    expect(configEqual(a, b), "configEqual: hai cấu hình mặc định giống nhau");
+    b = a; b.temp_max = 29.5f;
+    expect(!configEqual(a, b), "configEqual: đổi nhiệt độ tối đa thì khác");
+    b = a; b.feed_min[1] = 15 * 60;
+    expect(!configEqual(a, b), "configEqual: đổi một mốc giờ cho ăn thì khác");
+    b = a; b.feed_count = 2;
+    expect(!configEqual(a, b), "configEqual: đổi số mốc cho ăn thì khác");
+    a.feed_count = 2; b = a; b.feed_min[2] = 7 * 60;
+    expect(configEqual(a, b), "configEqual: mốc nằm ngoài feed_count không được so sánh");
+    b = a; b.buzzer_on = !a.buzzer_on;
+    expect(!configEqual(a, b), "configEqual: đổi buzzer_on thì khác"); }
   expect(c.feed_count == 3 && c.feed_min[0] == 480 && c.feed_min[1] == 840 && c.feed_min[2] == 1080,
          "Lịch cho ăn mặc định: 3 mốc 08:00, 14:00, 18:00");
   { RiskThresholds th = configThresholds(c);

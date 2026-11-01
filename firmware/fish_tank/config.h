@@ -162,5 +162,6 @@
 #define TZ_OFFSET_S             (7 * 3600) // UTC+7
 #define RECONNECT_MIN_MS        1000       // chờ tăng dần 1, 2, 4 ... giây
 #define RECONNECT_MAX_MS        30000      // tối đa 30 giây
-#define REBOOT_IF_NO_MQTT_MS    (10UL * 60UL * 1000UL)  // mất MQTT quá 10 phút thì tự khởi động lại
+#define REBOOT_IF_NO_MQTT_MS    (10UL * 60UL * 1000UL)  // WiFi còn mà mất MQTT quá 10 phút thì tự khởi động lại
+#define REBOOT_IF_NO_WIFI_MS    (30UL * 60UL * 1000UL)  // mất cả WiFi: chờ lâu hơn (30 phút) mới khởi động lại, tránh làm gián đoạn còi
 #define WDT_TIMEOUT_S           30

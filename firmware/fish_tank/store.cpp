@@ -23,6 +23,19 @@ AppConfig configDefaults() {
   return c;
 }
 
+bool configEqual(const AppConfig& a, const AppConfig& b) {
+  if (a.temp_min != b.temp_min || a.temp_max != b.temp_max) return false;
+  if (a.ph_min != b.ph_min || a.ph_max != b.ph_max) return false;
+  if (a.turb_max_pct != b.turb_max_pct) return false;
+  if (a.level_min_pct != b.level_min_pct || a.level_danger_pct != b.level_danger_pct) return false;
+  if (a.buzzer_on != b.buzzer_on || a.mute_min != b.mute_min || a.feed_ms != b.feed_ms) return false;
+  if (a.feed_count != b.feed_count) return false;
+  for (uint8_t i = 0; i < a.feed_count && i < FEED_MAX_TIMES; i++) {
+    if (a.feed_min[i] != b.feed_min[i]) return false;
+  }
+  return true;
+}
+
 RiskThresholds configThresholds(const AppConfig& c) {
   RiskThresholds t;
   t.temp_min = c.temp_min;
