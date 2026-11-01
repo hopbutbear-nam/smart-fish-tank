@@ -109,12 +109,12 @@
 // !!! rồi đặt CALIBRATION_DONE = 1. Số pH, độ đục, mực nước trước đó CHỈ để thử luồng dữ liệu.
 // ---------------------------------------------------------------------------
 #define CALIBRATION_DONE        0
-#define PH_V686                 2.50f      // V của module pH trong dung dịch 6,86 (V)
-#define PH_V401                 3.00f      // V của module pH trong dung dịch 4,01 (V)
-#define TURB_V_CLEAR            4.00f      // V của module độ đục trong nước sạch (V)
-#define TURB_V_DIRTY            2.50f      // V trong nước rất đục (V)
+#define PH_V686                 2.56f      // V của module pH trong dung dịch 6,86 (V)
+#define PH_V401                 3.14f      // V của module pH trong dung dịch 4,01 (V)
+#define TURB_V_CLEAR            3.764f      // V của module độ đục trong nước sạch (V)
+#define TURB_V_DIRTY            2.21f      // V trong nước rất đục (V)
 #define LEVEL_RAW_DRY           0          // giá trị ADC khi khô
-#define LEVEL_RAW_FULL          2500       // giá trị ADC khi ngập tới mức đầy
+#define LEVEL_RAW_FULL          1560       // giá trị ADC khi ngập tới mức đầy
 #define LEVEL_PWR_SETTLE_MS     20         // chờ sau khi bật GPIO27 rồi mới đọc
 #define LEVEL_RAW_SHORT         4090       // GIÁ TRỊ TẠM: trung bình thô từ mức này trở lên = chập hoặc kẹt trần ADC -> lỗi cảm biến mực nước (phải lớn hơn LEVEL_RAW_FULL)
 #define LEVEL_SPREAD_MAX        300        // GIÁ TRỊ TẠM: chênh giữa mẫu lớn nhất và nhỏ nhất trong một vòng đo vượt mức này = đọc không ổn định -> lỗi
