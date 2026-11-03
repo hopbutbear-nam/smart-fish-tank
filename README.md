@@ -1,6 +1,6 @@
 # smart-fish-tank: Hệ thống quản lý bể cá thông minh (IoT)
 
-> **Cập nhật:** 31/10/2026 · Theo kế hoạch dự án phiên bản 1.3  
+> **Cập nhật:** 03/11/2026 · Theo kế hoạch dự án phiên bản 1.5  
 > **Kho mã nguồn:** [hopbutbear-nam/smart-fish-tank](https://github.com/hopbutbear-nam/smart-fish-tank)
 
 Hệ thống sử dụng ESP32 để theo dõi nhiệt độ, pH, độ đục và mực nước của bể cá; cảnh báo tại chỗ bằng còi; điều khiển cơ cấu cho ăn bằng servo; đồng thời gửi dữ liệu qua Wi-Fi lên EMQX Cloud để người nuôi theo dõi và gửi lệnh từ xa qua web.
@@ -16,7 +16,7 @@ Kho GitHub này là **công khai**. Tuyệt đối không đưa mật khẩu Wi-
 | Giao tiếp | MQTT qua TLS; trình duyệt kết nối bằng WebSocket bảo mật (WSS) |
 | Cảm biến | DS18B20, cảm biến pH, cảm biến độ đục, cảm biến mực nước |
 | Cơ cấu chấp hành | Servo SG90 loại xoay liên tục 360° và còi thụ động |
-| Loài cá mục tiêu | Cá guppy; bể mini để bàn khoảng 4–6 lít |
+| Loài cá mục tiêu | Cá guppy; bể mini để bàn khoảng 4 đến 6 l |
 | Quy mô nhóm | 3 thành viên; phân công cơ khí/kiểm tra linh kiện, firmware/web, tích hợp/kiểm thử |
 | Ngân sách đã ghi nhận | Khoảng 1.151.000 VNĐ |
 | Hạn nộp theo kế hoạch | 03/11/2026 |
@@ -67,27 +67,26 @@ Một số lưu ý phần cứng quan trọng:
 
 ## Tiến độ dự án
 
-Trạng thái dưới đây phản ánh kế hoạch phiên bản 1.3, cập nhật ngày 31/10/2026. Một giai đoạn chỉ được xem là hoàn thành khi các bài kiểm thử bắt buộc của giai đoạn đó có kết quả và bằng chứng. **Code đã viết hoặc chạy mô phỏng không đồng nghĩa hệ thống đã chạy đạt trên phần cứng thật.**
+Trạng thái dưới đây phản ánh kế hoạch phiên bản 1.5, cập nhật ngày 03/11/2026. Một giai đoạn chỉ được xem là hoàn thành khi các bài kiểm thử bắt buộc của giai đoạn đó có kết quả và bằng chứng. **Code đã viết hoặc chạy mô phỏng không đồng nghĩa hệ thống đã chạy đạt trên phần cứng thật.** Mục ghi 'theo lời nhóm' chưa có bằng chứng trong tests/.
 
-| GĐ | Tên | Trạng thái đến 31/10/2026 |
+| GĐ | Tên | Trạng thái đến 03/11/2026 |
 | --- | --- | --- |
-| 0 | Chuẩn bị môi trường | **Cơ bản hoàn tất.** Đã cài công cụ/thư viện, nạp chương trình thử, tạo kho và mời thành viên. Nhóm đã báo xử lý sự cố bí mật và đổi mật khẩu; vẫn cần chạy lại rà soát kho (T0.4). |
-| 1 | Dựng cloud EMQX | **Gần hoàn tất.** Đã tạo deployment/tài khoản, cấu hình quyền, thử MQTT/TLS và tải CA. Còn T1.9; bài kiểm tra bổ sung T1.8 về quyền tài khoản `esp32` đã được nhóm chủ động bỏ qua nên chưa có bằng chứng. |
-| 2 | Kiểm tra và hiệu chuẩn thiết bị | **Đang làm, bị giới hạn bởi phần cứng đang cho mượn.** DS18B20 đã đọc được; servo đã quay; còi đã kêu. Còn kiểm tra mực nước, pH, độ đục, cơ cấu cho ăn, so nhiệt kế và hoàn thiện bảng hiệu chuẩn. |
-| 3 | Firmware ESP32 | **Đã viết code; kiểm thử logic MÔ PHỎNG đạt.** Risk: 72/72 ca; logic cảm biến/còi: 101 ca, 0 lỗi; logic cho ăn/lưu cấu hình: 89 ca, 0 lỗi (bộ ca thử bản 1.4, chạy lại 01/11/2026; ảnh bằng chứng cũ ở tests/phase3/ ứng với bộ 35/83/76 ca). Chưa có bằng chứng biên dịch, nạp và chạy trên ESP32 thật; hằng số hiệu chuẩn còn tạm. |
-| 4 | Web frontend | **Đã viết code; đã thử với ESP32 giả (MÔ PHỎNG).** Có ảnh cho một phần bài thử, nhưng chưa đủ bằng chứng để kết luận toàn bộ T4.1–T4.9 đạt. Chưa thử với ESP32 thật và GitHub Pages chưa bật. |
-| 5 | Ghép nối, thử nghiệm toàn hệ thống | **Chưa làm.** Cần thực hiện các kịch bản T5.1–T5.10, gồm cảm biến, cho ăn, cảnh báo, mất mạng, chạy liên tục và truy cập từ mạng di động. |
-| 6 | Đưa web lên mạng, bảo mật | **Chưa làm.** Cần bật GitHub Pages, chuyển firmware sang xác minh TLS bằng CA, kiểm tra ACL, rà soát bí mật và hoàn tất các bài T6.1–T6.5. |
-| 7 | Tính năng mở rộng | **Tùy chọn.** Thứ tự ưu tiên đề xuất: Telegram, vỏ hộp/chống nước, lưu lịch sử dài hạn, OTA. |
-| 8 | Hoàn thiện và nghiệm thu | **Chưa làm.** Mục tiêu là chạy trên bể thật 3–7 ngày, hoàn thiện tài liệu, báo cáo và demo. |
+| 0 | Chuẩn bị môi trường | **Hoàn tất (theo lời nhóm, 03/11/2026).** T0.1 đến T0.4 đạt; đã cài công cụ/thư viện, nạp chương trình thử, tạo kho và phân vai. |
+| 1 | Dựng cloud EMQX | **Hoàn tất (theo lời nhóm, 03/11/2026).** T1.1 đến T1.9 đạt; đã tạo deployment/tài khoản, cấu hình whitelist, thử MQTT/TLS và tải CA. T1.8 bổ sung đã bỏ qua có chủ đích. |
+| 2 | Kiểm tra và hiệu chuẩn thiết bị | **Hiệu chuẩn xong: CALIBRATION_DONE = 1 (01/11/2026), số đo ở documentation/calibration/bang-hieu-chuan.md.** Bộ kit đã nối hoàn chỉnh và kiểm thử đạt (theo lời nhóm, 03/11/2026). |
+| 3 | Firmware ESP32 | **Logic MÔ PHỎNG: risk 72/72, cảm biến và còi 101 ca 0 lỗi, cho ăn và lưu cấu hình 89 ca (sai 4 khi FEED_MAX_PER_24H = 20, xem Q1); chạy thật đạt (theo lời nhóm, 03/11/2026).** Bộ ca thử chạy lại 03/11/2026; ảnh trong tests/phase3/evidence/ là của bộ cũ 35, 83, 76 ca. |
+| 4 | Web frontend | **Code đã viết; mô phỏng ESP32 giả đạt; chạy thật đạt (theo lời nhóm, 03/11/2026); GitHub Pages chưa bật.** Đã thử nghiệm các chức năng hiển thị, điều khiển cho ăn và cảnh báo. |
+| 5 | Ghép nối, thử nghiệm toàn hệ thống | **Đạt (theo lời nhóm, 03/11/2026); riêng T5.7 chạy liên tục nhóm điền số giờ.** Đã thử nghiệm cảm biến, cho ăn, còi, mất mạng và kết nối 4G. |
+| 6 | Đưa web lên mạng, bảo mật | **Một phần: đã đổi mật khẩu, whitelist bật; CA và GitHub Pages chưa làm (hạn chế đã biết).** secrets.example.h đã giá trị giả (03/11/2026); rà soát bí mật đạt theo lời nhóm. |
+| 7 | Tính năng mở rộng | **Chưa thực hiện (tính năng mở rộng).** Đề xuất: Telegram, vỏ hộp/chống nước, lưu lịch sử dài hạn, OTA. |
+| 8 | Hoàn thiện và nghiệm thu | **Đang hoàn thiện: bảng nghiệm thu đã ánh xạ; chờ số liệu chạy thật (A10) và link báo cáo/slide (A11).** Nghiệm thu đạt 5/9 tiêu chí. |
 
-### Việc cần ưu tiên tiếp theo
+### Việc còn lại trước khi nộp
 
-1. Nhận lại ESP32 và các linh kiện; hoàn thành Giai đoạn 2, đặc biệt hiệu chuẩn pH, độ đục, mực nước, servo và cơ cấu cho ăn. Điền các số đo vào `documentation/calibration/bang-hieu-chuan.md`.
-2. Biên dịch/nạp firmware trên ESP32 thật; kiểm tra Wi-Fi, NTP, MQTT, cảm biến, còi và servo. Thay các hằng số tạm trong `firmware/fish_tank/config.h` bằng số liệu hiệu chuẩn đã đo.
-3. Cập nhật kết quả và bằng chứng của các bài đã chạy vào `tests/phase3/results.md` và `tests/phase4/results.md`; lưu ảnh/log đúng thư mục `evidence/`. Ghi rõ bài nào chỉ là MÔ PHỎNG.
-4. Thực hiện đủ các bài kiểm thử tích hợp T5.1–T5.10 trước khi coi hệ thống hoạt động hoàn chỉnh.
-5. Thực hiện Giai đoạn 6: bật GitHub Pages, thay chế độ TLS tạm bằng xác minh CA trong firmware, rà soát lại ACL và quét toàn bộ kho để chắc chắn không còn bí mật.
+1. Chốt các câu hỏi kỹ thuật còn mở (Q1: hạn mức cho ăn 4 hay 20; Q2: pH 2,56/3,14 hay 2,66/3,24; Q3: duty/chu kỳ còi mức 1 và 2; Q4: chuyển TLS CA trong firmware).
+2. Bài chỉ có ghi nhận "theo lời nhóm": nhóm bổ sung ảnh chụp màn hình và log Serial vào `tests/phaseN/evidence/`.
+3. Bổ sung đường dẫn báo cáo, slide thuyết trình và video demo hệ thống (mục A11).
+4. Bật GitHub Pages cho thư mục `docs/` và chuyển firmware sang dùng `setCACert` nếu hoàn thiện bảo mật Giai đoạn 6.
 
 ## Cấu trúc kho
 
@@ -100,6 +99,7 @@ smart-fish-tank/
 │   ├── certs/
 │   │   └── emqx-ca.pem
 │   ├── tests/
+│   │   ├── reset_feed_history/
 │   │   ├── test1_blink/
 │   │   ├── test4_emqx/
 │   │   ├── test_ds18b20/
@@ -124,8 +124,11 @@ smart-fish-tank/
 │   ├── manifest.json
 │   ├── sw.js
 │   └── icons/
+│       └── icon.svg
 ├── documentation/
 │   ├── IoT-fish-tank-plan.docx
+│   ├── fix-plan.md
+│   ├── fixing.docx
 │   ├── team/                     # phan-vai.md
 │   ├── diagrams/
 │   ├── calibration/              # bang-hieu-chuan.md
@@ -160,18 +163,30 @@ Các thư mục `evidence/` có thể chứa `.gitkeep` để Git giữ thư m�
 - **Thử MQTT:** MQTTX; thông tin kết nối và topic xem tại mục E của kế hoạch.
 - **ESP32 giả:** Python 3.8 trở lên và `paho-mqtt`; mã nguồn tại `tools/fake-esp32/`.
 - **Kiểm thử logic trên máy tính:** các chương trình trong `tools/test-risk/`, `tools/test-sensors-alarm/` và `tools/test-store-feeder/`.
+  - `tools/test-risk/test_risk.cpp`:
+    `g++ -std=c++11 -Wall -I firmware/fish_tank tools/test-risk/test_risk.cpp firmware/fish_tank/risk.cpp -o test_risk`
+    Kết quả mong đợi: Tổng: 72 ca, sai 0.
+  - `tools/test-sensors-alarm/test_sensors_alarm.cpp`:
+    `g++ -std=c++11 -Wall -I firmware/fish_tank tools/test-sensors-alarm/test_sensors_alarm.cpp firmware/fish_tank/sensors.cpp firmware/fish_tank/alarm.cpp firmware/fish_tank/risk.cpp -o tools/test-sensors-alarm/test_sensors_alarm.exe`
+    Kết quả mong đợi: 101 ca, sai 0.
+  - `tools/test-store-feeder/test_store_feeder.cpp`:
+    `g++ -std=c++11 -Wall -I firmware/fish_tank tools/test-store-feeder/test_store_feeder.cpp firmware/fish_tank/store.cpp firmware/fish_tank/feeder.cpp firmware/fish_tank/risk.cpp -o tools/test-store-feeder/test_store_feeder.exe`
+    Kết quả mong đợi: 89 ca, sai 0 (sai 4 ca khi FEED_MAX_PER_24H = 20 theo Q1).
 
 ## Bảo mật và giới hạn cần biết
 
 - Không commit `secrets.h`, mật khẩu Wi-Fi/MQTT, token Telegram hoặc API key. `secrets.example.h` chỉ chứa giá trị giả để minh họa cấu trúc.
-- Kế hoạch ghi nhận đã từng có thông tin đăng nhập thật trong `firmware/fish_tank/secrets.example.h`; nhóm báo đã sửa tệp và đổi mật khẩu. Vì kho công khai có lịch sử commit, vẫn phải kiểm tra lại cả nội dung hiện tại và lịch sử kho; nếu phát hiện bí mật từng bị đẩy lên, tiếp tục thay/thu hồi bí mật tương ứng.
-- Firmware ở trạng thái Giai đoạn 3 đang dùng cấu hình TLS tạm `setInsecure()`. Giai đoạn 6 phải thay bằng xác minh chứng chỉ CA (`setCACert`) và đồng bộ NTP trước khi kết nối.
+- `secrets.example.h` hiện chỉ chứa giá trị giả (đã kiểm 03/11/2026). Lịch sử git còn bản cũ; nhóm báo đã đổi mật khẩu WiFi và tài khoản esp32; rà soát lại: Đạt (theo lời nhóm, 03/11/2026).
+- Firmware ở trạng thái Giai đoạn 3 đang dùng cấu hình TLS tạm `setInsecure()`; chưa chuyển sang `setCACert` tại 03/11/2026 (theo Q4).
 - Web là frontend tĩnh, **không có hệ thống xác thực người dùng thực sự**. Người biết thông tin đăng nhập MQTT `webuser` có thể xem dữ liệu và gửi lệnh điều khiển. Muốn có tài khoản riêng và phân quyền nhiều người dùng cần bổ sung backend.
 - Giữ Spend Limit EMQX bằng `0` theo kế hoạch; không tạo API key nếu dự án không cần.
 
 ## Tài liệu và liên kết
 
-- **Kế hoạch dự án (nguồn thông số chuẩn):** [`documentation/IoT-fish-tank-plan.docx`](documentation/IoT-fish-tank-plan.docx)
+- **Kế hoạch dự án (nguồn thông số chuẩn bản 1.5):** [`documentation/IoT-fish-tank-plan.docx`](documentation/IoT-fish-tank-plan.docx)
+- **Kế hoạch cập nhật tài liệu bản 1.5:** [`documentation/fixing.docx`](documentation/fixing.docx)
+- **Lịch sử sửa bản 1.4:** [`documentation/fix-plan.md`](documentation/fix-plan.md)
+- **Báo cáo, slide và video demo:** (chưa có trong kho, nhóm bổ sung đường dẫn)
 - **Phân vai nhóm:** [`documentation/team/phan-vai.md`](documentation/team/phan-vai.md)
 - **Firmware:** [`firmware/README.md`](firmware/README.md)
 - **Kho mã nguồn:** [GitHub – smart-fish-tank](https://github.com/hopbutbear-nam/smart-fish-tank)
@@ -182,6 +197,8 @@ Các thư mục `evidence/` có thể chứa `.gitkeep` để Git giữ thư m�
 
 Mọi code, tài liệu, sơ đồ, ảnh kiểm thử và báo cáo phải được lưu vào đúng thư mục trong kho; không để tệp chỉ nằm trong cuộc trò chuyện. Sau mỗi bài kiểm thử, cập nhật `tests/phaseN/results.md` cùng ảnh/log trong `tests/phaseN/evidence/` và che mọi thông tin nhạy cảm trong bằng chứng.
 
+Khi git status liệt kê nhiều tệp chỉ khác kết thúc dòng, không dùng git add .; thêm từng tệp cần commit.
+
 Trước khi commit, chạy `git pull`, kiểm tra `git status` và chắc chắn không có bí mật nào được thêm vào. Không dùng `git push --force` hoặc xóa lịch sử nếu chưa được cả nhóm đồng ý.
 
 Mẫu commit: `<phần>: <việc đã làm>`, trong đó `<phần>` là `firmware`, `web`, `tests`, `docs`, `tools` hoặc `extensions`.
@@ -191,7 +208,7 @@ Ví dụ:
 ```bash
 git pull
 git status
-git add .
+git add documentation/IoT-fish-tank-plan.docx
 git commit -m "firmware: cập nhật logic cảnh báo"
 git push
 ```
