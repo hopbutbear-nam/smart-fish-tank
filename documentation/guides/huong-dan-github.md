@@ -3,6 +3,7 @@
 ## Trước mỗi lần commit
 - Không có `secrets.h`, mật khẩu, token, API key trong thay đổi.
 - File `.ino` đã xóa mật khẩu WiFi/EMQX điền tạm (ví dụ `test4_emqx.ino`).
+- Không dùng `git add .` khi có nhiều tệp chỉ khác kết thúc dòng; chỉ thêm từng tệp cần commit.
 - Nếu lỡ commit bí mật: **đổi mật khẩu ngay** (lịch sử vẫn lưu), rồi mới xóa file.
 
 ## Tải lên bằng giao diện web

@@ -1,3 +1,3 @@
 # docs/icons/
 
-Biểu tượng PWA (ví dụ 192x192 và 512x512 PNG). Khai báo trong `manifest.json`.
+Hiện dùng `icon.svg` (khai báo trong `manifest.json`, purpose: any). PNG 192 và 512 là tùy chọn, chưa có.

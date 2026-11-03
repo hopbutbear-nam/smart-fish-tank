@@ -2,10 +2,10 @@
 
 **Dự án:** Hệ thống quản lý bể cá thông minh (IoT-fish-tank)  
 **Kho mã nguồn:** <https://github.com/hopbutbear-nam/smart-fish-tank>  
-**Ngày cập nhật:** 31/10/2026  
+**Ngày cập nhật:** 03/11/2026  
 **Hạn nộp dự án:** 03/11/2026
 
-> Tài liệu này được lập theo kế hoạch `IoT-fish-tank-plan` phiên bản 1.3. Nhóm có 3 thành viên. Kế hoạch hiện chưa cung cấp họ tên cụ thể, vì vậy các vị trí tên bên dưới được để trống để nhóm tự điền.
+> Tài liệu này được lập theo kế hoạch `IoT-fish-tank-plan` phiên bản 1.5. Nhóm có 3 thành viên. Kế hoạch hiện chưa cung cấp họ tên cụ thể, vì vậy các vị trí tên bên dưới được để trống để nhóm tự điền.
 
 ## 1. Danh sách thành viên
 
@@ -78,7 +78,7 @@
 **Sản phẩm bàn giao:**
 
 - Firmware trong `firmware/fish_tank/` và mã web trong `docs/`.
-- Kết quả kiểm thử firmware T3.1–T3.11 và web T4.1–T4.9, kèm log/ảnh tương ứng.
+- Kết quả kiểm thử firmware T3.1–T3.12 và web T4.1–T4.9, kèm log/ảnh tương ứng.
 - Hướng dẫn cấu hình bí mật cục bộ dựa trên tệp mẫu, không chứa mật khẩu thật.
 - Các thay đổi code được commit lên nhánh làm việc của nhóm và tích hợp vào kho chung.
 
@@ -118,6 +118,18 @@
 | Báo cáo, slide và demo cuối | Cả nhóm | Cả nhóm |
 
 ## 4. Tiến độ và thứ tự ưu tiên
+
+| Giai đoạn | Người phụ trách chính | Trạng thái |
+|---|---|---|
+| Giai đoạn 0: Chuẩn bị môi trường | Thành viên 2 | Hoàn tất (theo lời nhóm, 03/11/2026); T0.1 đến T0.4 đạt |
+| Giai đoạn 1: Dựng cloud EMQX | Thành viên 3 | Hoàn tất (theo lời nhóm, 03/11/2026); T1.1 đến T1.9 đạt (T1.8 bổ sung đã bỏ qua) |
+| Giai đoạn 2: Kiểm tra và hiệu chuẩn thiết bị | Thành viên 1 | Hoàn tất (theo lời nhóm); CALIBRATION_DONE = 1 từ 01/11/2026; bảng hiệu chuẩn đã điền |
+| Giai đoạn 3: Firmware ESP32 | Thành viên 2 | Logic MÔ PHỎNG: risk 72/72, cảm biến/còi 101 ca 0 lỗi, cho ăn 89 ca (sai 4 khi FEED_MAX_PER_24H = 20, Q1); chạy thật đạt (theo lời nhóm, 03/11/2026) |
+| Giai đoạn 4: Web frontend | Thành viên 2 | Code đã viết; mô phỏng ESP32 giả đạt; chạy thật đạt (theo lời nhóm, 03/11/2026); GitHub Pages chưa bật |
+| Giai đoạn 5: Ghép nối, thử nghiệm toàn hệ thống | Thành viên 3 | Đạt (theo lời nhóm, 03/11/2026); riêng T5.7 chạy liên tục nhóm điền số giờ |
+| Giai đoạn 6: Đưa web lên mạng, bảo mật | Thành viên 3 | Một phần: đã đổi mật khẩu, whitelist bật; CA và GitHub Pages chưa làm (hạn chế đã biết) |
+| Giai đoạn 7: Tính năng mở rộng | Cả nhóm | Chưa thực hiện (tính năng mở rộng) |
+| Giai đoạn 8: Hoàn thiện và nghiệm thu | Cả nhóm | Đang hoàn thiện: bảng nghiệm thu đã ánh xạ; chờ số liệu chạy thật (A10) và link báo cáo/slide (A11) |
 
 
 ## 5. Quy tắc phối hợp và bàn giao

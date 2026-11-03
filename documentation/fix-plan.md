@@ -1,5 +1,7 @@
 # fix-plan.md: kế hoạch sửa lỗi và tối ưu (nguồn sự thật duy nhất cho Agent antiGravity)
 
+> **Trạng thái:** đã áp dụng ở bản 1.4 (các commit từ 8ae14d2 đến ae5c064, 01/11/2026). Giữ làm lịch sử, không áp dụng lại.
+
 | Mục | Giá trị |
 |---|---|
 | Dự án | Hệ thống bể cá thông minh (IoT-fish-tank), kho `smart-fish-tank` |

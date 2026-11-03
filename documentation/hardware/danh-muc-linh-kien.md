@@ -1,10 +1,10 @@
 # Danh mục linh kiện (tổng đã chi 1.151.000 đ)
 
-Chi tiết từng món xem mục C của `../IoT-fish-tank-plan.docx`.
+Chi tiết từng món xem mục C của `../IoT-fish-tank-plan.docx`. Cổng kết nối trên ESP32 là cổng Type-C.
 
 | # | Linh kiện | SL |
 | --- | --- | --- |
-| 1 | Kit ESP32 38 chân CP2102 | 1 |
+| 1 | Kit ESP32 38 chân CP2102 (cổng Type-C) | 1 |
 | 2 | Đế mở rộng ESP32 38 chân | 1 |
 | 3 | Cảm biến nhiệt độ chống nước DS18B20 | 1 |
 | 4 | Module cảm biến độ đục nước | 1 |
@@ -17,4 +17,4 @@ Chi tiết từng món xem mục C của `../IoT-fish-tank-plan.docx`.
 | 11 đến 15 | Các loại dây cắm | các bộ |
 | 16 | Đầu nối PH2.0 2P, 3P, 4P, 5P | 4 combo |
 
-Còn thiếu hoặc nên bổ sung: dung dịch chuẩn pH 4,01 và 6,86; đồng hồ vạn năng; nguồn 5V 2A; hộp nhựa và silicone; cơ cấu cho ăn.
+Còn thiếu hoặc nên bổ sung: dung dịch chuẩn pH 4,01 và 6,86 (đã dùng để hiệu chuẩn); nguồn 5V 2A (đã có); đồng hồ vạn năng (nhóm không dùng vì không đủ thời gian đặt mua (H2)); hộp nhựa và silicone; cơ cấu cho ăn (đã nối và kiểm thử).

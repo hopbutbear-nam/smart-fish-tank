@@ -3,6 +3,8 @@
 | Mục | Nội dung |
 | --- | --- |
 | `IoT-fish-tank-plan.docx` | Kế hoạch dự án (nguồn sự thật: mục E) |
+| `fix-plan.md` | Kế hoạch sửa bản 1.4, đã áp dụng; giữ làm lịch sử |
+| `fixing.docx` | Kế hoạch cập nhật tài liệu bản 1.5 |
 | `team/` | Phân vai, hạn nộp |
 | `diagrams/` | Sơ đồ hệ thống và sơ đồ đấu dây |
 | `calibration/` | Bảng hằng số hiệu chuẩn (sau Giai đoạn 2) |
